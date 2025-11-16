@@ -64,57 +64,76 @@ Powered by Infinity • Designed by Kris Watson & ChatGPT
 </footer>
 
 <script>
-/* ===================================================
-   GITHUB ACTION HOOK — message sender
-   =================================================== */
-async function sendToOctave(text) {
+const terminal = document.getElementById("terminal");
+const input = document.getElementById("commandInput");
+
+// -------------------------------
+// PRINT TO TERMINAL
+// -------------------------------
+function printToTerminal(text) {
+    terminal.innerHTML += "\n" + text;
+    terminal.scrollTop = terminal.scrollHeight;
+}
+
+// -------------------------------
+// SEND TO BACKEND SERVER
+// -------------------------------
+async function sendToServer(text) {
     try {
-        // This is the endpoint made by your GitHub Action
-        await fetch(
-            "https://api.github.com/repos/pewpi-infinity/i/dispatches",
-            {
-                method: "POST",
-                headers: {
-                    "Accept": "application/vnd.github+json",
-                    "Content-Type": "application/json",
-                    // The token WILL be replaced by workflow later.
-                    // We keep this blank until backend is ready.
-                    "Authorization": "Bearer REPLACE_WITH_PEWPI_PAT"
-                },
-                body: JSON.stringify({
-                    event_type: "octave_message",
-                    client_payload: { text }
-                })
-            }
-        );
-    } catch (err) {
-        console.log("sendToOctave() failed:", err);
+        const response = await fetch("http://localhost:5050/log", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text })
+        });
+
+        const data = await response.json();
+
+        if (data.status === "ok") {
+            printToTerminal(`[logged → repo]: ${text}`);
+        } else {
+            printToTerminal("[error logging]");
+        }
+    } catch (e) {
+        printToTerminal("[backend offline]");
     }
 }
 
-/* ===================================================
-   TERMINAL LOGIC
-   =================================================== */
-const terminal = document.getElementById("terminal");
-const input = document.getElementById("input");
+// -------------------------------
+// SIMPLE OCTAVE RESPONSE ENGINE
+// -------------------------------
+function simpleAIResponse(cmd) {
+    if (cmd === "") return "";
+    if (cmd.length < 2) return "OK.";
 
-input.addEventListener("keydown", function(e) {
+    // fallback responses (no Python involved yet)
+    const responses = [
+        "Understood.",
+        "Processing.",
+        "Got it.",
+        "Logged.",
+        "Routing...",
+        "Confirm.",
+        "Received."
+    ];
+    return responses[Math.floor(Math.random() * responses.length)];
+}
+
+// -------------------------------
+// HANDLE ENTER KEY
+// -------------------------------
+input.addEventListener("keydown", function (e) {
     if (e.key === "Enter") {
-        const userInput = input.value.trim();
-        if (!userInput) return;
-
-        // Print to terminal
-        terminal.innerHTML += "\n∞ > " + userInput;
-        terminal.scrollTop = terminal.scrollHeight;
-
-        // Send to GH workflow (safe even if token missing)
-        sendToOctave(userInput);
-
-        // Clear bar
+        const cmd = input.value.trim();
         input.value = "";
+
+        printToTerminal("∞ > " + cmd);
+
+        // send to python backend
+        sendToServer(cmd);
+
+        // local response (immediate)
+        const reply = simpleAIResponse(cmd);
+        if (reply) printToTerminal(reply);
     }
 });
 </script>
-
-</body>
-</html>
