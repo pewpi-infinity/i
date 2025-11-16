@@ -6,57 +6,53 @@
 <title>Octave OS — Infinity Terminal</title>
 
 <style>
-    body {
-        background: #dfe9f5;
-        font-family: monospace;
-        padding: 20px;
-        margin: 0;
-    }
+body {
+    background: #dfe9f5;
+    font-family: monospace;
+    padding: 20px;
+}
 
-    h1 {
-        text-align: center;
-        font-size: 32px;
-        margin-bottom: 20px;
-    }
+h1 {
+    text-align: center;
+    font-size: 32px;
+}
 
-    #terminal {
-        width: 100%;
-        height: 350px;
-        background: #042445;
-        color: #27ffff;
-        padding: 20px;
-        border-radius: 12px;
-        overflow-y: auto;
-        white-space: pre-line;
-        font-size: 18px;
-        margin-bottom: 20px;
-        box-sizing: border-box;
-    }
+#terminal {
+    width: 100%;
+    height: 350px;
+    background: #042445;
+    color: #27ffff;
+    padding: 20px;
+    border-radius: 12px;
+    overflow-y: auto;
+    white-space: pre-line;
+    font-size: 18px;
+    margin-bottom: 20px;
+}
 
-    #input {
-        width: 100%;
-        padding: 14px;
-        font-size: 18px;
-        border-radius: 10px;
-        border: 2px solid #000;
-        box-sizing: border-box;
-    }
+#input {
+    width: 100%;
+    padding: 14px;
+    font-size: 18px;
+    border-radius: 10px;
+    border: 2px solid #000;
+}
 
-    footer {
-        margin-top: 20px;
-        text-align: center;
-        font-size: 14px;
-        opacity: 0.6;
-    }
+footer {
+    margin-top: 20px;
+    text-align: center;
+    font-size: 14px;
+    opacity: 0.6;
+}
 </style>
 </head>
+
 <body>
 
 <h1>Octave OS — Infinity Terminal</h1>
 
 <div id="terminal">
 Octave OS v0.12 — AI Knowledge Vault Ready.
-
 Type a command and press Enter.
 </div>
 
@@ -68,72 +64,57 @@ Powered by Infinity • Designed by Kris Watson & ChatGPT
 
 <script>
 const terminal = document.getElementById("terminal");
-const input = document.getElementById("input");   // FIXED ID — now works
+const input = document.getElementById("input");
 
-// -------------------------------
-// PRINT TO TERMINAL
-// -------------------------------
+// print
 function printToTerminal(text) {
     terminal.innerHTML += "\n" + text;
     terminal.scrollTop = terminal.scrollHeight;
 }
 
-// -------------------------------
-// SEND TO BACKEND SERVER (optional)
-// -------------------------------
-async function sendToServer(text) {
+// send to backend
+async function sendToBackend(text) {
     try {
-        const response = await fetch("http://localhost:5050/log", {
+        const response = await fetch("http://100.103.137.233:5050/log", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ text })
         });
 
-        const data = await response.json();
-
-        if (data.status === "ok") {
-            printToTerminal(`[logged → repo]: ${text}`);
-        } else {
-            printToTerminal("[error logging]");
-        }
+        const json = await response.json();
+        printToTerminal("✔ Logged to server");
     } catch (e) {
-        printToTerminal("[backend offline]");
+        printToTerminal("⚠ backend offline");
     }
 }
 
-// -------------------------------
-// SIMPLE LOCAL AI RESPONSE
-// -------------------------------
-function simpleAIResponse(cmd) {
+// simple local response so it feels alive
+function aiRespond(cmd) {
     if (!cmd) return "";
-
-    const responses = [
-        "Understood.",
-        "Processing.",
-        "Got it.",
+    const replies = [
+        "Roger.",
+        "Affirmative.",
         "Logged.",
-        "Routing...",
-        "Confirm.",
-        "Received."
+        "Understood.",
+        "Working.",
+        "Processing."
     ];
-
-    return responses[Math.floor(Math.random() * responses.length)];
+    return replies[Math.floor(Math.random()*replies.length)];
 }
 
-// -------------------------------
-// ENTER KEY HANDLER
-// -------------------------------
-input.addEventListener("keydown", function (e) {
+// handle Enter
+input.addEventListener("keydown", function(e) {
     if (e.key === "Enter") {
         const cmd = input.value.trim();
         input.value = "";
 
         printToTerminal("∞ > " + cmd);
 
-        sendToServer(cmd); // optional backend logging
+        // send to python
+        sendToBackend(cmd);
 
-        const reply = simpleAIResponse(cmd);
-        if (reply) printToTerminal(reply);
+        // respond
+        printToTerminal(aiRespond(cmd));
     }
 });
 </script>
