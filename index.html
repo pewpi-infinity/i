@@ -10,11 +10,13 @@
         background: #dfe9f5;
         font-family: monospace;
         padding: 20px;
+        margin: 0;
     }
 
     h1 {
         text-align: center;
         font-size: 32px;
+        margin-bottom: 20px;
     }
 
     #terminal {
@@ -28,6 +30,7 @@
         white-space: pre-line;
         font-size: 18px;
         margin-bottom: 20px;
+        box-sizing: border-box;
     }
 
     #input {
@@ -36,6 +39,7 @@
         font-size: 18px;
         border-radius: 10px;
         border: 2px solid #000;
+        box-sizing: border-box;
     }
 
     footer {
@@ -45,7 +49,6 @@
         opacity: 0.6;
     }
 </style>
-
 </head>
 <body>
 
@@ -65,7 +68,7 @@ Powered by Infinity • Designed by Kris Watson & ChatGPT
 
 <script>
 const terminal = document.getElementById("terminal");
-const input = document.getElementById("input");   // <<< FIXED
+const input = document.getElementById("input");   // FIXED ID — now works
 
 // -------------------------------
 // PRINT TO TERMINAL
@@ -76,7 +79,7 @@ function printToTerminal(text) {
 }
 
 // -------------------------------
-// SEND TO BACKEND SERVER
+// SEND TO BACKEND SERVER (optional)
 // -------------------------------
 async function sendToServer(text) {
     try {
@@ -99,11 +102,10 @@ async function sendToServer(text) {
 }
 
 // -------------------------------
-// SIMPLE OCTAVE RESPONSE ENGINE
+// SIMPLE LOCAL AI RESPONSE
 // -------------------------------
 function simpleAIResponse(cmd) {
-    if (cmd === "") return "";
-    if (cmd.length < 2) return "OK.";
+    if (!cmd) return "";
 
     const responses = [
         "Understood.",
@@ -114,11 +116,12 @@ function simpleAIResponse(cmd) {
         "Confirm.",
         "Received."
     ];
+
     return responses[Math.floor(Math.random() * responses.length)];
 }
 
 // -------------------------------
-// HANDLE ENTER KEY
+// ENTER KEY HANDLER
 // -------------------------------
 input.addEventListener("keydown", function (e) {
     if (e.key === "Enter") {
@@ -127,10 +130,13 @@ input.addEventListener("keydown", function (e) {
 
         printToTerminal("∞ > " + cmd);
 
-        sendToServer(cmd);
+        sendToServer(cmd); // optional backend logging
 
         const reply = simpleAIResponse(cmd);
         if (reply) printToTerminal(reply);
     }
 });
 </script>
+
+</body>
+</html>
