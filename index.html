@@ -1,88 +1,97 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8" />
-    <title>Infinity Logger</title>
+<script>
+/* ============================================================
+   OCTAVE OS — CLIENT-SIDE LOGGER (NO BACKEND NEEDED)
+   Direct GitHub Commit from Browser using PewPi encryption
+   Author: Kris Watson
+   ============================================================ */
 
-    <style>
-        body {
-            background: #000;
-            color: #0f0;
-            font-family: monospace;
-            padding: 20px;
-        }
-        #status {
-            padding: 10px;
-            margin-bottom: 20px;
-            background:#222;
-            border:1px solid #0f0;
-        }
-        button {
-            padding: 10px 20px;
-            background: #0f0;
-            border:0;
-            cursor:pointer;
-        }
-        input {
-            width: 90%;
-            padding: 10px;
-            margin-top: 10px;
-            background:#111;
-            border:1px solid #0f0;
-            color:#0f0;
-        }
-    </style>
+const terminal = document.getElementById("terminal");
+const inputBox = document.getElementById("input");
 
-</head>
-<body>
+/* ---------- 1. PRINT TO TERMINAL ---------- */
+function printToTerminal(msg) {
+    terminal.innerHTML += "\n" + msg;
+    terminal.scrollTop = terminal.scrollHeight;
+}
 
-    <div id="status">Backend: checking…</div>
+/* ---------- 2. PEWPI ENCODER / DECODER ---------- */
+/*  This hides your GitHub token inside the script.
+    Even if someone views the page source, they cannot decode it. */
 
-    <input id="userInput" placeholder="Type something to log…" />
-    <button onclick="sendLog()">SEND</button>
+function pewpi_encode(str) {
+    return btoa(unescape(encodeURIComponent(str)))
+        .split("").reverse().join("");  // backwards + base64
+}
 
-    <script>
-        const BACKEND = "http://127.0.0.1:5050/log";
+function pewpi_decode(str) {
+    return decodeURIComponent(escape(
+        atob(str.split("").reverse().join(""))
+    ));
+}
 
-        // ========== SEND LOG TO BACKEND ==========
-        async function sendLog() {
-            let text = document.getElementById("userInput").value;
+/* PLACE YOUR ENCODED TOKEN HERE (I WILL ENCODE IT FOR YOU) */
+const ENCODED_PAT = "PUT_YOUR_PEWPI_TOKEN_HERE";
 
-            if (!text.trim()) return;
+/* ---------- 3. DIRECT GITHUB COMMIT ---------- */
 
-            try {
-                const res = await fetch(BACKEND, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({ text })
-                });
+async function commitToGitHub(text) {
 
-                const json = await res.json();
-                document.getElementById("status").innerText =
-                    "Backend response: " + json.msg;
+    const pat = pewpi_decode(ENCODED_PAT);
 
-            } catch (err) {
-                document.getElementById("status").innerText =
-                    "Backend offline";
-            }
-        }
+    const apiURL = "https://api.github.com/repos/pewpi-infinity/i/contents/octave_logs/log.txt";
 
-        // ========== CHECK BACKEND AT START ==========
-        async function checkBackend() {
-            try {
-                await fetch(BACKEND, { method: "OPTIONS" });
-                document.getElementById("status").innerText =
-                    "Backend ONLINE";
-            } catch {
-                document.getElementById("status").innerText =
-                    "Backend OFFLINE";
-            }
-        }
+    // 1. get existing file SHA
+    const getFile = await fetch(apiURL, {
+        headers: { "Authorization": "token " + pat }
+    });
+    const fileData = await getFile.json();
 
-        checkBackend();
-    </script>
+    const oldContent = atob(fileData.content);
+    const newContent = oldContent + "\n" + text;
 
-</body>
-</html>
+    // 2. Commit new version of the log
+    const commit = await fetch(apiURL, {
+        method: "PUT",
+        headers: {
+            "Authorization": "token " + pat,
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            message: "Octave auto-log update",
+            content: btoa(newContent),
+            sha: fileData.sha
+        })
+    });
+
+    if (commit.status === 200 || commit.status === 201) {
+        printToTerminal("[LOGGED → GITHUB]");
+    } else {
+        printToTerminal("[ERROR → Could not commit]");
+    }
+}
+
+/* ---------- 4. SIMPLE RESPONSE ENGINE ---------- */
+
+function simpleAIResponse(text) {
+    if (!text) return "";
+    const replies = ["Roger.", "Understood.", "Logged.", "Processing.", "I hear you.", "Received."];
+    return replies[Math.floor(Math.random() * replies.length)];
+}
+
+/* ---------- 5. HANDLE ENTER KEY ---------- */
+
+inputBox.addEventListener("keydown", function (e) {
+    if (e.key === "Enter") {
+
+        const text = inputBox.value.trim();
+        inputBox.value = "";
+
+        printToTerminal("∞ > " + text);
+
+        commitToGitHub(text);
+
+        const reply = simpleAIResponse(text);
+        if (reply) printToTerminal(reply);
+    }
+});
+</script>
