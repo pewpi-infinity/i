@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,82 +7,116 @@
 <title>Octave OS — Infinity Terminal</title>
 
 <style>
+    /* Basic reset */
+    *, *::before, *::after { box-sizing: border-box; }
+
     body {
         background: #dfe9f5;
         font-family: monospace;
         padding: 20px;
+        margin: 0;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        color: #042445;
+    }
+
+    .container {
+        max-width: 820px;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
     }
 
     h1 {
         text-align: center;
-        font-size: 32px;
-        margin-bottom: 20px;
+        font-size: 26px;
+        margin: 6px 0 10px 0;
     }
 
     #terminal {
         width: 100%;
-        height: 350px;
+        height: 52vh;
+        min-height: 220px;
         background: #042445;
         color: #27ffff;
-        padding: 20px;
+        padding: 16px;
         border-radius: 12px;
         overflow-y: auto;
         white-space: pre-line;
-        font-size: 18px;
-        margin-bottom: 20px;
+        font-size: 16px;
+        line-height: 1.35;
+        margin-bottom: 4px;
     }
 
     #cmd {
         width: 100%;
-        padding: 14px;
-        font-size: 18px;
+        padding: 12px 14px;
+        font-size: 16px;
         border-radius: 10px;
         border: 2px solid #000;
+        outline: none;
+        background: #fff;
     }
 
     footer {
-        margin-top: 20px;
+        margin-top: 8px;
         text-align: center;
-        font-size: 14px;
-        opacity: 0.6;
+        font-size: 13px;
+        opacity: 0.7;
+    }
+
+    /* Mobile adjustments */
+    @media (max-width: 480px) {
+        body { padding: 12px; }
+        h1 { font-size: 20px; }
+        #terminal { font-size: 15px; border-radius: 10px; padding: 12px; }
+        #cmd { padding: 10px; font-size: 15px; }
     }
 </style>
 </head>
 
 <body>
+<div class="container">
+    <h1>Octave OS — Infinity Terminal</h1>
 
-<h1>Octave OS — Infinity Terminal</h1>
+    <div id="terminal" role="log" aria-live="polite">
+        Octave OS v0.12 — AI Knowledge Vault Ready.
+        Type a command and press Enter.
+    </div>
 
-<div id="terminal">
-Octave OS v0.12 — AI Knowledge Vault Ready.
-Type a command and press Enter.
+    <input id="cmd" placeholder="Type here…" autocomplete="off" autocorrect="off" autocapitalize="off" />
+
+    <footer>
+        Powered by Infinity • Designed by Kris Watson & ChatGPT
+    </footer>
 </div>
-
-<input id="cmd" placeholder="Type here…" />
-
-<footer>
-Powered by Infinity • Designed by Kris Watson & ChatGPT
-</footer>
 
 <script>
 const terminal = document.getElementById("terminal");
-const input = document.getElementById("input");  // IMPORTANT FIX
+const input = document.getElementById("cmd");  // FIXED: now matches the input element
 
 function printToTerminal(text) {
-    terminal.innerHTML += "\n" + text;
+    // Append a new line then text. Use textContent for safety and convert newlines to <br>.
+    const escaped = String(text)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+    terminal.innerHTML += "\n" + escaped;
     terminal.scrollTop = terminal.scrollHeight;
 }
 
 async function sendToServer(text) {
     try {
-        const response = await fetch("http://127.0.0.1:5050/log", {
+        // Use relative path so the frontend works when served from the same host/port as the logging server.
+        const response = await fetch("/log", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ text })
         });
 
         const data = await response.json();
-        if (data.status === "ok") {
+        if (data && data.status === "ok") {
             printToTerminal("✔ logged to server");
         } else {
             printToTerminal("✘ server error");
@@ -99,10 +134,18 @@ input.addEventListener("keydown", function (e) {
         input.value = "";
 
         printToTerminal("∞ > " + text);
+        // send to logger
         sendToServer(text);
 
         // local immediate response
         printToTerminal("Roger.");
     }
 });
+
+// Optional: focus input on load and on container click for phone UX
+window.addEventListener('load', () => { input.focus(); });
+terminal.addEventListener('click', () => { input.focus(); });
 </script>
+</body>
+</html>
+```
