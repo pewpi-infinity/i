@@ -87,3 +87,20 @@ input.addEventListener("keydown", async function(e) {
     input.value = "";
 });
 </script>
+<!-- === OCTAVE OS WORKFLOW BRIDGE === -->
+<script>
+async function sendToOctave(text) {
+    await fetch("https://api.github.com/repos/pewpi-infinity/i/dispatches", {
+        method: "POST",
+        headers: {
+            "Accept": "application/vnd.github+json",
+            "Authorization": "Bearer YOUR_PAT_HERE"
+        },
+        body: JSON.stringify({
+            event_type: "octave_input",
+            client_payload: { message: text }
+        })
+    });
+}
+</script>
+
