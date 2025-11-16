@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Octave OS — Infinity Terminal</title>
 
+<!-- PYTHON ENGINE (PYSCRIPT) -->
+<script defer src="https://pyscript.net/latest/pyscript.js"></script>
+<link rel="stylesheet" href="https://pyscript.net/latest/pyscript.css" />
+
 <style>
     body {
         font-family: Arial, sans-serif;
@@ -61,7 +65,6 @@
         color: #555;
         padding-bottom: 25px;
     }
-
 </style>
 </head>
 <body>
@@ -70,7 +73,7 @@
 
 <div class="terminal-container">
     <div id="terminal" class="terminal-window">
-        Octave OS v0.12 — AI Knowledge Vault Ready.
+        Octave OS v0.12 — AI Knowledge Vault Ready.<br>
         Type a command and press Enter.
     </div>
 
@@ -82,52 +85,87 @@
     Design by Kris Watson & ChatGPT
 </div>
 
+<!-- PYTHON: REAL OCTAVE OS BRAIN -->
+<py-script>
+import js
+
+# --------------------------
+#   MEMORY FILE
+# --------------------------
+MEMORY_FILE = "octave_memory.txt"
+
+def write_memory(text):
+    with open(MEMORY_FILE, "a") as f:
+        f.write(text + "\n")
+
+# --------------------------
+#  KERNEL + ENCODER MODULE
+# --------------------------
+class OKernel:
+    def __init__(self):
+        self.data_chamber = """
+        The DATA CHAMBER is ready.
+        You can paste millions of words here.
+        Quantum math, physics, algebra, vectors,
+        equations, formulas, linguistics, chemistry.
+        """
+    
+    def encode(self, text):
+        if len(text) < 1:
+            return (0,0)
+
+        note = ord(text[0]) % 7
+        octave = (ord(text[0]) % 3) + 3
+        freq = 220 * (2 ** (note/12))
+        return (freq, octave)
+
+    def semantic_scan(self, topic):
+        lines = self.data_chamber.lower().split("\n")
+        result = [l for l in lines if topic in l][:10]
+        if not result:
+            return ["No semantic links found."]
+        return result
+
+    def dispatch(self, packet, raw_user):
+        # Memory log
+        write_memory(f"USER: {raw_user}")
+        write_memory(f"PACKET: {packet}")
+
+        raw = raw_user.lower()
+
+        if "find" in raw or "scan" in raw:
+            t = raw.replace("find", "").replace("scan", "").strip()
+            links = self.semantic_scan(t)
+            return "Semantic links for '" + t + "':\n" + "\n".join(links)
+
+        return "Octave OS: Command acknowledged."
+
+kernel = OKernel()
+
+# Bridge for JS
+def run_octave(raw):
+    pkt = kernel.encode(raw)
+    return kernel.dispatch(pkt, raw)
+
+js.run_octave = run_octave
+</py-script>
+
+<!-- JS FRONT-END -->
 <script>
     const terminal = document.getElementById("terminal");
     const input = document.getElementById("commandInput");
 
-    // BASIC JS SIMULATION OF OCTAVE_OS.PY LOGIC
-    function octaveEncode(text) {
-        if (!text || text.length < 1) return [0,0];
-        const note = text.charCodeAt(0) % 7;
-        const octave = (text.charCodeAt(0) % 3) + 3;
-        const freq = 220 * Math.pow(2, (note/12));
-        return [freq, octave];
-    }
-
-    function octaveSemantic(topic) {
-        topic = topic.toLowerCase();
-        const data = `
-            ${" ".repeat(1)}
-            ${"Add your DATA_CHAMBER content here later..."}
-        `.toLowerCase();
-
-        const lines = data.split("\n");
-        let hits = lines.filter(l => l.includes(topic)).slice(0,5);
-        if (hits.length === 0) hits = ["No semantic links found."];
-        return hits.join("\n");
-    }
-
-    function octaveDispatch(pkt, raw) {
-        if (raw.includes("find") || raw.includes("scan")) {
-            let t = raw.replace("find", "").replace("scan", "").trim();
-            return "Semantic links for '" + t + "':\n" + octaveSemantic(t);
-        }
-        return "Octave OS: Command acknowledged.";
-    }
-
-    input.addEventListener("keydown", function(e) {
+    input.addEventListener("keydown", async function(e) {
         if (e.key === "Enter") {
             const cmd = input.value.trim();
             if (cmd.length === 0) return;
 
             terminal.innerHTML += "\n∞ > " + cmd;
 
-            const packet = octaveEncode(cmd.toLowerCase());
-            const result = octaveDispatch(packet, cmd.toLowerCase());
+            // REAL PYTHON ENGINE:
+            const pyResult = await pyscript.python.runPythonAsync(`run_octave("${cmd}")`);
 
-            terminal.innerHTML += "\n" + result;
-
+            terminal.innerHTML += "\n" + pyResult;
             terminal.scrollTop = terminal.scrollHeight;
             input.value = "";
         }
