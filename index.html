@@ -6,44 +6,47 @@
 <title>Octave OS — Infinity Terminal</title>
 
 <style>
-body {
-    background: #dfe9f5;
-    font-family: monospace;
-    padding: 20px;
-}
+    body {
+        background: #dfe9f5;
+        font-family: monospace;
+        padding: 20px;
+    }
 
-h1 {
-    text-align: center;
-    font-size: 32px;
-}
+    h1 {
+        text-align: center;
+        font-size: 32px;
+        margin-bottom: 25px;
+    }
 
-#terminal {
-    width: 100%;
-    height: 350px;
-    background: #042445;
-    color: #27ffff;
-    padding: 20px;
-    border-radius: 12px;
-    overflow-y: auto;
-    white-space: pre-line;
-    font-size: 18px;
-    margin-bottom: 20px;
-}
+    #terminal {
+        width: 100%;
+        height: 360px;
+        background: #042445;
+        color: #27ffff;
+        padding: 20px;
+        border-radius: 12px;
+        overflow-y: auto;
+        white-space: pre-line;
+        font-size: 18px;
+        margin-bottom: 20px;
+        border: 2px solid #001c33;
+    }
 
-#input {
-    width: 100%;
-    padding: 14px;
-    font-size: 18px;
-    border-radius: 10px;
-    border: 2px solid #000;
-}
+    #input {
+        width: 100%;
+        padding: 16px;
+        font-size: 18px;
+        border-radius: 10px;
+        border: 2px solid #000;
+        outline: none;
+    }
 
-footer {
-    margin-top: 20px;
-    text-align: center;
-    font-size: 14px;
-    opacity: 0.6;
-}
+    footer {
+        margin-top: 22px;
+        text-align: center;
+        font-size: 14px;
+        opacity: 0.65;
+    }
 </style>
 </head>
 
@@ -53,6 +56,7 @@ footer {
 
 <div id="terminal">
 Octave OS v0.12 — AI Knowledge Vault Ready.
+
 Type a command and press Enter.
 </div>
 
@@ -66,55 +70,78 @@ Powered by Infinity • Designed by Kris Watson & ChatGPT
 const terminal = document.getElementById("terminal");
 const input = document.getElementById("input");
 
-// print
+// -------------------------------------------
+// PRINT TO TERMINAL
+// -------------------------------------------
 function printToTerminal(text) {
     terminal.innerHTML += "\n" + text;
     terminal.scrollTop = terminal.scrollHeight;
 }
 
-// send to backend
-async function sendToBackend(text) {
+// -------------------------------------------
+// SEND TO PYTHON BACKEND (Termux server.py)
+// -------------------------------------------
+async function sendToServer(cmd) {
     try {
-        const response = await fetch("http://100.103.137.233:5050/log", {
+        const response = await fetch("http://127.0.0.1:5050/log", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ text })
+            body: JSON.stringify({ text: cmd })
         });
 
-        const json = await response.json();
-        printToTerminal("✔ Logged to server");
-    } catch (e) {
-        printToTerminal("⚠ backend offline");
+        if (!response.ok) {
+            printToTerminal("[Server error]");
+            return;
+        }
+
+        const data = await response.json();
+
+        if (data.status === "ok") {
+            printToTerminal("[Logged]");
+        } else {
+            printToTerminal("[Log failed]");
+        }
+
+    } catch (err) {
+        // We REMOVE the spam message & keep UI clean
+        console.log("Backend unreachable.");
     }
 }
 
-// simple local response so it feels alive
-function aiRespond(cmd) {
-    if (!cmd) return "";
+// -------------------------------------------
+// SIMPLE AI FALLBACK RESPONSES
+// -------------------------------------------
+function simpleAIResponse(cmd) {
     const replies = [
         "Roger.",
-        "Affirmative.",
-        "Logged.",
         "Understood.",
+        "Processing.",
+        "Acknowledged.",
+        "Message received.",
         "Working.",
-        "Processing."
+        "Confirm."
     ];
-    return replies[Math.floor(Math.random()*replies.length)];
+
+    if (cmd.trim() === "") return "";
+    return replies[Math.floor(Math.random() * replies.length)];
 }
 
-// handle Enter
-input.addEventListener("keydown", function(e) {
-    if (e.key === "Enter") {
+// -------------------------------------------
+// HANDLE ENTER KEY
+// -------------------------------------------
+input.addEventListener("keydown", async function(event) {
+    if (event.key === "Enter") {
         const cmd = input.value.trim();
         input.value = "";
 
         printToTerminal("∞ > " + cmd);
 
-        // send to python
-        sendToBackend(cmd);
+        // send to backend
+        sendToServer(cmd);
 
-        // respond
-        printToTerminal(aiRespond(cmd));
+        // immediate response
+        const resp = simpleAIResponse(cmd);
+        if (resp) printToTerminal(resp);
     }
 });
 </script>
