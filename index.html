@@ -64,64 +64,45 @@ Powered by Infinity • Designed by Kris Watson & ChatGPT
 </footer>
 
 <script>
-const term = document.getElementById("terminal");
-const input = document.getElementById("cmd");
+const terminal = document.getElementById("terminal");
+const input = document.getElementById("input");  // IMPORTANT FIX
 
-/* PRINT TO TERMINAL */
-function out(msg){
-    term.innerHTML += "\n" + msg;
-    term.scrollTop = term.scrollHeight;
+function printToTerminal(text) {
+    terminal.innerHTML += "\n" + text;
+    terminal.scrollTop = terminal.scrollHeight;
 }
 
-/* SEND LOG TO RUNNING BACKEND */
-async function logToServer(text){
+async function sendToServer(text) {
     try {
-        const r = await fetch("http://127.0.0.1:5050/log", {
+        const response = await fetch("http://127.0.0.1:5050/log", {
             method: "POST",
-            headers: {"Content-Type": "application/json"},
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ text })
         });
 
-        let j = await r.json();
-        if(j.status === "ok"){
-            out("[logged]");
+        const data = await response.json();
+        if (data.status === "ok") {
+            printToTerminal("✔ logged to server");
         } else {
-            out("[error logging]");
+            printToTerminal("✘ server error");
         }
-    } catch {
-        out("[backend offline]");
+
+    } catch (err) {
+        printToTerminal("✘ backend offline");
     }
 }
 
-/* SIMPLE AI RESPONSE */
-function aiReply(cmd){
-    if(!cmd) return "";
-    const replies = [
-        "Got it.",
-        "Okay.",
-        "Confirmed.",
-        "Understood.",
-        "Received."
-    ];
-    return replies[Math.floor(Math.random()*replies.length)];
-}
-
-/* ENTER KEY HANDLER */
-input.addEventListener("keydown", e => {
-    if(e.key === "Enter"){
-        const txt = input.value.trim();
-        if(!txt) return;
-
-        out("∞ > " + txt);
+input.addEventListener("keydown", function (e) {
+    if (e.key === "Enter") {
+        const text = input.value.trim();
+        if (!text) return;
         input.value = "";
 
-        logToServer(txt);
+        printToTerminal("∞ > " + text);
+        sendToServer(text);
 
-        const reply = aiReply(txt);
-        if(reply) out(reply);
+        // local immediate response
+        printToTerminal("Roger.");
     }
 });
 </script>
-
-</body>
-</html>
