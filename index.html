@@ -1,4 +1,3 @@
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -97,7 +96,6 @@ const terminal = document.getElementById("terminal");
 const input = document.getElementById("cmd");  // FIXED: now matches the input element
 
 function printToTerminal(text) {
-    // Append a new line then text. Use textContent for safety and convert newlines to <br>.
     const escaped = String(text)
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
@@ -108,7 +106,6 @@ function printToTerminal(text) {
 
 async function sendToServer(text) {
     try {
-        // Use relative path so the frontend works when served from the same host/port as the logging server.
         const response = await fetch("/log", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -134,18 +131,14 @@ input.addEventListener("keydown", function (e) {
         input.value = "";
 
         printToTerminal("∞ > " + text);
-        // send to logger
         sendToServer(text);
-
-        // local immediate response
         printToTerminal("Roger.");
     }
 });
 
-// Optional: focus input on load and on container click for phone UX
+// Focus assistance for mobile
 window.addEventListener('load', () => { input.focus(); });
 terminal.addEventListener('click', () => { input.focus(); });
 </script>
 </body>
 </html>
-```
