@@ -174,3 +174,20 @@ js.run_octave = run_octave
 
 </body>
 </html>
+
+<script>
+async function writeToRepo(text) {
+    await fetch("https://api.github.com/repos/pewpi-infinity/i/dispatches", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/vnd.github+json"
+        },
+        body: JSON.stringify({
+            event_type: "octave_write",
+            client_payload: { text: text }
+        })
+    });
+}
+</script>
+
