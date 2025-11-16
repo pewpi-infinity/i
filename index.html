@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Octave OS — Infinity Terminal</title>
+
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        background: #ffffff;
+        padding: 0;
+        overflow-x: hidden;
+    }
+
+    .header {
+        text-align: center;
+        padding: 20px;
+        font-size: 26px;
+        font-weight: bold;
+        color: #005bbb;
+    }
+
+    .terminal-container {
+        width: 95%;
+        max-width: 600px;
+        margin: 0 auto;
+        background: #eaf3ff;
+        border-radius: 12px;
+        padding: 15px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.08);
+        margin-top: 10px;
+    }
+
+    .terminal-window {
+        background: #002b55;
+        color: #00eeff;
+        font-family: Consolas, monospace;
+        padding: 12px;
+        height: 380px;
+        overflow-y: auto;
+        border-radius: 8px;
+        white-space: pre-wrap;
+        font-size: 14px;
+    }
+
+    .terminal-input {
+        margin-top: 12px;
+        width: 100%;
+        padding: 10px;
+        font-size: 16px;
+        border-radius: 8px;
+        border: 1px solid #0077dd;
+    }
+
+    .footer {
+        margin-top: 30px;
+        text-align: center;
+        font-size: 14px;
+        color: #555;
+        padding-bottom: 25px;
+    }
+
+</style>
+</head>
+<body>
+
+<div class="header">Octave OS — Infinity Terminal</div>
+
+<div class="terminal-container">
+    <div id="terminal" class="terminal-window">
+        Octave OS v0.12 — AI Knowledge Vault Ready.
+        Type a command and press Enter.
+    </div>
+
+    <input id="commandInput" class="terminal-input" placeholder="∞ > type here..." />
+</div>
+
+<div class="footer">
+    Powered by Infinity<br>
+    Design by Kris Watson & ChatGPT
+</div>
+
+<script>
+    const terminal = document.getElementById("terminal");
+    const input = document.getElementById("commandInput");
+
+    // BASIC JS SIMULATION OF OCTAVE_OS.PY LOGIC
+    function octaveEncode(text) {
+        if (!text || text.length < 1) return [0,0];
+        const note = text.charCodeAt(0) % 7;
+        const octave = (text.charCodeAt(0) % 3) + 3;
+        const freq = 220 * Math.pow(2, (note/12));
+        return [freq, octave];
+    }
+
+    function octaveSemantic(topic) {
+        topic = topic.toLowerCase();
+        const data = `
+            ${" ".repeat(1)}
+            ${"Add your DATA_CHAMBER content here later..."}
+        `.toLowerCase();
+
+        const lines = data.split("\n");
+        let hits = lines.filter(l => l.includes(topic)).slice(0,5);
+        if (hits.length === 0) hits = ["No semantic links found."];
+        return hits.join("\n");
+    }
+
+    function octaveDispatch(pkt, raw) {
+        if (raw.includes("find") || raw.includes("scan")) {
+            let t = raw.replace("find", "").replace("scan", "").trim();
+            return "Semantic links for '" + t + "':\n" + octaveSemantic(t);
+        }
+        return "Octave OS: Command acknowledged.";
+    }
+
+    input.addEventListener("keydown", function(e) {
+        if (e.key === "Enter") {
+            const cmd = input.value.trim();
+            if (cmd.length === 0) return;
+
+            terminal.innerHTML += "\n∞ > " + cmd;
+
+            const packet = octaveEncode(cmd.toLowerCase());
+            const result = octaveDispatch(packet, cmd.toLowerCase());
+
+            terminal.innerHTML += "\n" + result;
+
+            terminal.scrollTop = terminal.scrollHeight;
+            input.value = "";
+        }
+    });
+</script>
+
+</body>
+</html>
