@@ -62,30 +62,36 @@ function octaveDispatch(pkt, raw) {
 // ----------------------------
 //  ENTER KEY HANDLER — FIXED
 // ----------------------------
-input.addEventListener("keydown", async function(e) {
+input.addEventListener("keydown", async function (e) {
+
+    // Only trigger on Enter
     if (e.key !== "Enter") return;
 
     const cmd = input.value.trim();
     if (cmd.length === 0) return;
 
-    // Echo in terminal
+    // ---- Echo locally ----
     terminal.innerHTML += "\n∞ > " + cmd;
 
-    // Send to GitHub repo memory
+    // ---- Write to repo memory ----
     writeToRepo(cmd);
 
-    // Generate response
+    // ---- Send to GitHub Action / Octave bridge ----
+    sendToOctave(cmd);
+
+    // ---- Existing Octave OS workflow ----
     const packet = octaveEncode(cmd);
     const out = octaveDispatch(packet, cmd);
 
     terminal.innerHTML += "\n" + out + "\n";
 
-    // Scroll properly
+    // ---- Keep scroll behavior ----
     terminal.scrollTop = terminal.scrollHeight;
 
-    // Clear input
+    // ---- Clear input ----
     input.value = "";
 });
+
 </script>
 <!-- === OCTAVE OS WORKFLOW BRIDGE === -->
 <script>
