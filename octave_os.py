@@ -847,6 +847,8 @@ class OShell:
             response = self.kernel.dispatch(pkt, user)
             print(response)
 
+write_memory(f"USER: {raw_user_text}")
+write_memory(f"PACKET: {packet}")
 
 if __name__ == "__main__":
     OShell().run()
