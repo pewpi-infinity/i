@@ -825,6 +825,11 @@ class OKernel:
 
         return "Octave OS: Command acknowledged."
 
+MEMORY_FILE = "octave_memory.txt"
+
+def write_memory(text):
+    with open(MEMORY_FILE, "a") as f:
+        f.write(text + "\n")
 
 # ------------------------------------------------
 #   OCTAVE SHELL
