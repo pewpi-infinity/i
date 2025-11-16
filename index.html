@@ -166,6 +166,7 @@ js.run_octave = run_octave
             const pyResult = await pyscript.python.runPythonAsync(`run_octave("${cmd}")`);
 
             terminal.innerHTML += "\n" + pyResult;
+            writeToRepo(cmd);
             terminal.scrollTop = terminal.scrollHeight;
             input.value = "";
         }
