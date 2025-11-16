@@ -1,97 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Octave OS — Infinity Terminal</title>
+
+<style>
+    body {
+        background: #dfe9f5;
+        font-family: monospace;
+        padding: 20px;
+    }
+
+    h1 {
+        text-align: center;
+        font-size: 32px;
+        margin-bottom: 20px;
+    }
+
+    #terminal {
+        width: 100%;
+        height: 350px;
+        background: #042445;
+        color: #27ffff;
+        padding: 20px;
+        border-radius: 12px;
+        overflow-y: auto;
+        white-space: pre-line;
+        font-size: 18px;
+        margin-bottom: 20px;
+    }
+
+    #cmd {
+        width: 100%;
+        padding: 14px;
+        font-size: 18px;
+        border-radius: 10px;
+        border: 2px solid #000;
+    }
+
+    footer {
+        margin-top: 20px;
+        text-align: center;
+        font-size: 14px;
+        opacity: 0.6;
+    }
+</style>
+</head>
+
+<body>
+
+<h1>Octave OS — Infinity Terminal</h1>
+
+<div id="terminal">
+Octave OS v0.12 — AI Knowledge Vault Ready.
+Type a command and press Enter.
+</div>
+
+<input id="cmd" placeholder="Type here…" />
+
+<footer>
+Powered by Infinity • Designed by Kris Watson & ChatGPT
+</footer>
+
 <script>
-/* ============================================================
-   OCTAVE OS — CLIENT-SIDE LOGGER (NO BACKEND NEEDED)
-   Direct GitHub Commit from Browser using PewPi encryption
-   Author: Kris Watson
-   ============================================================ */
+const term = document.getElementById("terminal");
+const input = document.getElementById("cmd");
 
-const terminal = document.getElementById("terminal");
-const inputBox = document.getElementById("input");
-
-/* ---------- 1. PRINT TO TERMINAL ---------- */
-function printToTerminal(msg) {
-    terminal.innerHTML += "\n" + msg;
-    terminal.scrollTop = terminal.scrollHeight;
+/* PRINT TO TERMINAL */
+function out(msg){
+    term.innerHTML += "\n" + msg;
+    term.scrollTop = term.scrollHeight;
 }
 
-/* ---------- 2. PEWPI ENCODER / DECODER ---------- */
-/*  This hides your GitHub token inside the script.
-    Even if someone views the page source, they cannot decode it. */
+/* SEND LOG TO RUNNING BACKEND */
+async function logToServer(text){
+    try {
+        const r = await fetch("http://127.0.0.1:5050/log", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({ text })
+        });
 
-function pewpi_encode(str) {
-    return btoa(unescape(encodeURIComponent(str)))
-        .split("").reverse().join("");  // backwards + base64
-}
-
-function pewpi_decode(str) {
-    return decodeURIComponent(escape(
-        atob(str.split("").reverse().join(""))
-    ));
-}
-
-/* PLACE YOUR ENCODED TOKEN HERE (I WILL ENCODE IT FOR YOU) */
-const ENCODED_PAT = "PUT_YOUR_PEWPI_TOKEN_HERE";
-
-/* ---------- 3. DIRECT GITHUB COMMIT ---------- */
-
-async function commitToGitHub(text) {
-
-    const pat = pewpi_decode(ENCODED_PAT);
-
-    const apiURL = "https://api.github.com/repos/pewpi-infinity/i/contents/octave_logs/log.txt";
-
-    // 1. get existing file SHA
-    const getFile = await fetch(apiURL, {
-        headers: { "Authorization": "token " + pat }
-    });
-    const fileData = await getFile.json();
-
-    const oldContent = atob(fileData.content);
-    const newContent = oldContent + "\n" + text;
-
-    // 2. Commit new version of the log
-    const commit = await fetch(apiURL, {
-        method: "PUT",
-        headers: {
-            "Authorization": "token " + pat,
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            message: "Octave auto-log update",
-            content: btoa(newContent),
-            sha: fileData.sha
-        })
-    });
-
-    if (commit.status === 200 || commit.status === 201) {
-        printToTerminal("[LOGGED → GITHUB]");
-    } else {
-        printToTerminal("[ERROR → Could not commit]");
+        let j = await r.json();
+        if(j.status === "ok"){
+            out("[logged]");
+        } else {
+            out("[error logging]");
+        }
+    } catch {
+        out("[backend offline]");
     }
 }
 
-/* ---------- 4. SIMPLE RESPONSE ENGINE ---------- */
-
-function simpleAIResponse(text) {
-    if (!text) return "";
-    const replies = ["Roger.", "Understood.", "Logged.", "Processing.", "I hear you.", "Received."];
-    return replies[Math.floor(Math.random() * replies.length)];
+/* SIMPLE AI RESPONSE */
+function aiReply(cmd){
+    if(!cmd) return "";
+    const replies = [
+        "Got it.",
+        "Okay.",
+        "Confirmed.",
+        "Understood.",
+        "Received."
+    ];
+    return replies[Math.floor(Math.random()*replies.length)];
 }
 
-/* ---------- 5. HANDLE ENTER KEY ---------- */
+/* ENTER KEY HANDLER */
+input.addEventListener("keydown", e => {
+    if(e.key === "Enter"){
+        const txt = input.value.trim();
+        if(!txt) return;
 
-inputBox.addEventListener("keydown", function (e) {
-    if (e.key === "Enter") {
+        out("∞ > " + txt);
+        input.value = "";
 
-        const text = inputBox.value.trim();
-        inputBox.value = "";
+        logToServer(txt);
 
-        printToTerminal("∞ > " + text);
-
-        commitToGitHub(text);
-
-        const reply = simpleAIResponse(text);
-        if (reply) printToTerminal(reply);
+        const reply = aiReply(txt);
+        if(reply) out(reply);
     }
 });
 </script>
+
+</body>
+</html>
