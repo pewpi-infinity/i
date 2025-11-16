@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Octave OS — Infinity Terminal</title>
+<title>Octave OS — Infinity Terminal (Frontend-only GitHub Logger)</title>
 
 <style>
     /* Basic reset */
@@ -58,6 +58,10 @@
         background: #fff;
     }
 
+    .controls { display:flex; gap:8px; align-items:center; }
+    .controls input[type=text] { padding:8px; font-size:14px; }
+    .note { font-size:12px; opacity:0.8; }
+
     footer {
         margin-top: 8px;
         text-align: center;
@@ -65,7 +69,6 @@
         opacity: 0.7;
     }
 
-    /* Mobile adjustments */
     @media (max-width: 480px) {
         body { padding: 12px; }
         h1 { font-size: 20px; }
@@ -80,11 +83,22 @@
     <h1>Octave OS — Infinity Terminal</h1>
 
     <div id="terminal" role="log" aria-live="polite">
-        Octave OS v0.12 — AI Knowledge Vault Ready.
-        Type a command and press Enter.
+        Octave OS v0.12 — Frontend-only logger ready.
+        Choose a logging method and press Enter.
+    </div>
+
+    <div class="controls">
+        <select id="method">
+            <option value="github">GitHub (direct commit from browser)</option>
+            <option value="server">Local server (POST /log)</option>
+            <option value="fs">Local file (File System Access API)</option>
+        </select>
+        <input id="token" type="text" placeholder="GitHub token (store local)" style="width:360px" />
+        <button id="saveToken">Save Token</button>
     </div>
 
     <input id="cmd" placeholder="Type here…" autocomplete="off" autocorrect="off" autocapitalize="off" />
+    <div class="note">Note: GitHub method will commit to pewpi-infinity/i logs/txt.log using the token you provide. Keep token secret.</div>
 
     <footer>
         Powered by Infinity • Designed by Kris Watson & ChatGPT
@@ -93,7 +107,28 @@
 
 <script>
 const terminal = document.getElementById("terminal");
-const input = document.getElementById("cmd");  // FIXED: now matches the input element
+const input = document.getElementById("cmd");
+const methodSelect = document.getElementById("method");
+const tokenInput = document.getElementById("token");
+const saveTokenBtn = document.getElementById("saveToken");
+
+const OWNER = 'pewpi-infinity';
+const REPO = 'i';
+const PATH = 'logs/txt.log';
+
+// Load saved token from localStorage
+tokenInput.value = localStorage.getItem('GH_LOG_TOKEN') || '';
+
+saveTokenBtn.addEventListener('click', () => {
+    const t = tokenInput.value.trim();
+    if (t) {
+        localStorage.setItem('GH_LOG_TOKEN', t);
+        printToTerminal('✔ token saved to localStorage');
+    } else {
+        localStorage.removeItem('GH_LOG_TOKEN');
+        printToTerminal('⚠ token cleared');
+    }
+});
 
 function printToTerminal(text) {
     const escaped = String(text)
@@ -106,37 +141,120 @@ function printToTerminal(text) {
 
 async function sendToServer(text) {
     try {
-        const response = await fetch("/log", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
+        const response = await fetch('/log', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ text })
         });
-
         const data = await response.json();
-        if (data && data.status === "ok") {
-            printToTerminal("✔ logged to server");
-        } else {
-            printToTerminal("✘ server error");
-        }
-
+        if (data && data.status === 'ok') printToTerminal('✔ logged to server');
+        else printToTerminal('✘ server error');
     } catch (err) {
-        printToTerminal("✘ backend offline");
+        printToTerminal('✘ backend offline: ' + err.message);
     }
 }
 
-input.addEventListener("keydown", function (e) {
-    if (e.key === "Enter") {
+// File System Access API method (for Chromium browsers)
+async function sendToFS(text) {
+    if (!window.showSaveFilePicker && !window.chooseFileSystemEntries) {
+        printToTerminal('✘ File System Access API not available in this browser');
+        return;
+    }
+    try {
+        // Try to open existing file or prompt user to pick
+        const options = {
+            types: [{
+                description: 'Text log',
+                accept: {'text/plain': ['.txt']}
+            }]
+        };
+        // showSaveFilePicker is modern; chooseFileSystemEntries older
+        const handle = await window.showSaveFilePicker ? await window.showSaveFilePicker(options) : await window.chooseFileSystemEntries({type: 'save-file'});
+        const writable = await handle.createWritable();
+        // Read existing contents if possible (best-effort)
+        try {
+            const fr = await handle.getFile();
+            const txt = await fr.text();
+            await writable.write(txt + '\n' + text + '\n');
+        } catch (e) {
+            await writable.write(text + '\n');
+        }
+        await writable.close();
+        printToTerminal('✔ written to local file');
+    } catch (err) {
+        printToTerminal('✘ FS error: ' + err.message);
+    }
+}
+
+// GitHub direct commit method (no server): uses GitHub Contents API
+async function sendToGitHub(text) {
+    const token = localStorage.getItem('GH_LOG_TOKEN') || tokenInput.value.trim();
+    if (!token) { printToTerminal('✘ No token set. Enter it and Save Token.'); return; }
+
+    const apiBase = 'https://api.github.com';
+    const fileUrl = `${apiBase}/repos/${OWNER}/${REPO}/contents/${PATH}`;
+
+    try {
+        // Get current file (if exists) to obtain sha and existing content
+        const getResp = await fetch(fileUrl, { headers: { 'Authorization': 'token ' + token, 'Accept': 'application/vnd.github+json' } });
+        let sha = null; let existing = '';
+        if (getResp.status === 200) {
+            const obj = await getResp.json();
+            sha = obj.sha;
+            existing = atob(obj.content.replace(/\n/g, ''));
+        } else if (getResp.status === 404) {
+            // file not found -> create new
+            existing = '';
+            sha = null;
+        } else {
+            const errText = await getResp.text();
+            printToTerminal('✘ GitHub GET error: ' + getResp.status + ' ' + errText);
+            return;
+        }
+
+        // Append new line
+        const newContent = existing + (existing && !existing.endsWith('\n') ? '\n' : '') + `[${new Date().toISOString()}] ${text}` + '\n';
+        const b64 = btoa(unescape(encodeURIComponent(newContent)));
+
+        const body = { message: 'Frontend log update', content: b64 };
+        if (sha) body.sha = sha;
+
+        const putResp = await fetch(fileUrl, {
+            method: 'PUT',
+            headers: { 'Authorization': 'token ' + token, 'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+
+        if (putResp.status === 201 || putResp.status === 200) {
+            printToTerminal('✔ logged to GitHub repo (committed)');
+        } else {
+            const txt = await putResp.text();
+            printToTerminal('✘ GitHub PUT error: ' + putResp.status + ' ' + txt);
+        }
+
+    } catch (err) {
+        printToTerminal('✘ GitHub error: ' + err.message);
+    }
+}
+
+input.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') {
         const text = input.value.trim();
         if (!text) return;
-        input.value = "";
+        input.value = '';
+        printToTerminal('∞ > ' + text);
 
-        printToTerminal("∞ > " + text);
-        sendToServer(text);
-        printToTerminal("Roger.");
+        const method = methodSelect.value;
+        if (method === 'server') sendToServer(text);
+        else if (method === 'fs') sendToFS(text);
+        else if (method === 'github') sendToGitHub(text);
+
+        // local immediate response
+        printToTerminal('Roger.');
     }
 });
 
-// Focus assistance for mobile
+// focus UX
 window.addEventListener('load', () => { input.focus(); });
 terminal.addEventListener('click', () => { input.focus(); });
 </script>
