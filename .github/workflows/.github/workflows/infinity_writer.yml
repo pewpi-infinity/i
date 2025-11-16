@@ -1,0 +1,58 @@
+name: Infinity Writer
+
+on:
+  push:
+    paths:
+      - 'queue/*.json'
+
+jobs:
+  process_queue:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+
+    - name: Configure Git
+      run: |
+        git config user.name "OctaveOS"
+        git config user.email "octave@infinity.os"
+
+    - name: Install jq (JSON processor)
+      run: sudo apt-get install -y jq
+
+    - name: Process Queue Files
+      run: |
+        for file in queue/*.json; do
+          echo "Processing $file"
+
+          ACTION_TYPE=$(jq -r '.type' "$file")
+          TARGET=$(jq -r '.target' "$file")
+          CONTENT=$(jq -r '.content' "$file")
+
+          if [ ! -f "$TARGET" ]; then
+            echo "Target file does not exist. Creating $TARGET"
+            mkdir -p "$(dirname "$TARGET")"
+            touch "$TARGET"
+          fi
+
+          if [ "$ACTION_TYPE" = "append" ]; then
+            echo "$CONTENT" >> "$TARGET"
+          fi
+
+          if [ "$ACTION_TYPE" = "overwrite" ]; then
+            echo "$CONTENT" > "$TARGET"
+          fi
+
+          # Mark processed file
+          mv "$file" "$file.done"
+        done
+
+    - name: Commit and Push Changes
+      run: |
+        git add -A
+        git commit -m "Infinity Writer: processed queue"
+        git push origin main
+      env:
+        GITHUB_TOKEN: ${{ secrets.INFINITY_PAT }}
+        
