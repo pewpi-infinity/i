@@ -1,5 +1,5 @@
 # ================================================
-#   OCTAVE OS v0.11
+#   OCTAVE OS v0.12 (FIXED)
 #   Kernel + Shell + AI-Ready Knowledge Vault
 #   Author: Kris Watson
 # ================================================
@@ -7,7 +7,10 @@
 import math
 
 # ------------------------------------------------
-#  DATA CHAMBER — DATA_CHAMBER = """
+#  BLUEPRINT ARCHIVE (stored, not executed)
+# ------------------------------------------------
+
+BLUEPRINT_ARCHIVE = """
 === INFINITY MASTER BLUEPRINT (COMPRESSED) ===
 
 CORE APPS:
@@ -105,9 +108,8 @@ NOTES:
 === END BLUEPRINT ===
 """
 
-#  This block is SAFE. The OS NEVER executes it.
-#  The OS ONLY reads or breaks pieces apart.
-#  You can add infinite text here.
+# ------------------------------------------------
+#   DATA CHAMBER (AI raw knowledge zone)
 # ------------------------------------------------
 
 DATA_CHAMBER = """
@@ -115,30 +117,24 @@ DATA_CHAMBER = """
 
 (This area is ignored by Octave OS execution.)
 
-You may dump:
+Add:
 - words
 - theories
 - long paragraphs
 - equations
 - commands
-- symbols
 - slang
-- future ideas
 - sketches
 - fragments
 - brainstorms
-- raw text from anywhere
+- raw text
 
-This is your RAW KNOWLEDGE ZONE.
-The OS will scan, break apart, match patterns, compute relationships,
-and use this text only for AI reasoning — not execution.
+The OS only *reads* this zone. Never executes it.
 
-Add anything you want below this line:
 -------------------------------------------------
-
 (put massive text here…)
-
 -------------------------------------------------
+
 END OF DATA CHAMBER
 """
 
@@ -147,40 +143,40 @@ END OF DATA CHAMBER
 # ------------------------------------------------
 
 class OKernel:
+    def __init__(self):
+        # Lowercase all chamber text for semantic matching
+        self.data = DATA_CHAMBER.lower()
 
-    def __init__(self):
-        self.data = DATA_CHAMBER.lower()
+    def encode(self, text_command):
+        base = text_command.lower().strip()
+        if not base:
+            return (0, 0)
 
-    def encode(self, text_command):
-        base = text_command.lower().strip()
+        note = ord(base[0]) % 7
+        octave = (ord(base[0]) % 3) + 3
+        freq = 220 * math.pow(2, (note/12))
 
-        # convert to basic frequency packet
-        note = ord(base[0]) % 7
-        octave = (ord(base[0]) % 3) + 3
+        return (freq, octave)
 
-        freq = 220 * math.pow(2, (note/12))
-        return (freq, octave)
+    def semantic_scan(self, topic):
+        t = topic.lower().strip()
+        results = []
 
-    def semantic_scan(self, topic):
-        """Break down topic & mine data-chamber for related fragments."""
-        t = topic.lower()
-        results = []
+        for line in self.data.split("\n"):
+            if t in line:
+                results.append(line.strip())
 
-        for line in self.data.split("\n"):
-            if t in line:
-                results.append(line.strip())
+        return results[:5] if results else ["No semantic links found."]
 
-        return results[:5] if results else ["No semantic links found."]
+    def dispatch(self, packet, raw_user_text):
+        freq, octave = packet
 
-    def dispatch(self, packet, raw_user_text):
-        freq, octave = packet
+        if "find" in raw_user_text or "scan" in raw_user_text:
+            topic = raw_user_text.replace("find", "").replace("scan", "").strip()
+            links = self.semantic_scan(topic)
+            return f"Semantic links for '{topic}':\n" + "\n".join(links)
 
-        if "find" in raw_user_text or "scan" in raw_user_text:
-            topic = raw_user_text.replace("find", "").replace("scan","").strip()
-            links = self.semantic_scan(topic)
-            return f"Semantic links for '{topic}':\n" + "\n".join(links)
-
-        return "Octave OS: Command acknowledged."
+        return "Octave OS: Command acknowledged."
 
 
 # ------------------------------------------------
@@ -188,19 +184,17 @@ class OKernel:
 # ------------------------------------------------
 
 class OShell:
+    def __init__(self):
+        self.kernel = OKernel()
 
-    def __init__(self):
-        self.kernel = OKernel()
-
-    def run(self):
-        print("Octave OS v0.11 — AI Knowledge Vault Ready.")
-        while True:
-            user = input("∞ > ")
-            pkt = self.kernel.encode(user)
-            response = self.kernel.dispatch(p
-kt, user)
-            print(response)
+    def run(self):
+        print("Octave OS v0.12 — AI Knowledge Vault Ready.")
+        while True:
+            user = input("∞ > ")
+            pkt = self.kernel.encode(user)
+            response = self.kernel.dispatch(pkt, user)
+            print(response)
 
 
 if __name__ == "__main__":
-    OShell().run()
+    OShell().run()
