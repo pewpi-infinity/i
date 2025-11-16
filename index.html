@@ -1,112 +1,120 @@
-<script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Octave OS — Infinity Terminal</title>
 
-// ----------------------------
-//  GITHUB WRITER
-// ----------------------------
-async function writeToRepo(text) {
-    try {
-        await fetch("https://api.github.com/repos/pewpi-infinity/i/dispatches", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/vnd.github+json"
-            },
-            body: JSON.stringify({
-                event_type: "octave_write",
-                client_payload: { text: text }
-            })
-        });
-    } catch (err) {
-        console.log("GitHub write error:", err);
+<style>
+    body {
+        background: #dfe9f5;
+        font-family: monospace;
+        padding: 20px;
     }
-}
 
-// ----------------------------
-//  TERMINAL + OCTAVE ENGINE
-// ----------------------------
-const terminal = document.getElementById("terminal");
-const input = document.getElementById("commandInput");
-
-// Frequency encoder (matching Python)
-function octaveEncode(text) {
-    if (!text || text.length < 1) return [0,0];
-    const note = text.charCodeAt(0) % 7;
-    const octave = (text.charCodeAt(0) % 3) + 3;
-    const freq = 220 * Math.pow(2, (note / 12));
-    return [freq, octave];
-}
-
-// Semantic mock (JS version)
-function octaveSemantic(topic) {
-    topic = topic.toLowerCase();
-
-    const data = `
-        this is placeholder semantic data
-        once DATA_CHAMBER is synced here
-        semantic scan will match real terms
-    `.toLowerCase();
-
-    const hits = data.split("\n").filter(l => l.includes(topic));
-    return hits.length > 0 ? hits.slice(0, 5).join("\n") : "No semantic links found.";
-}
-
-// Command dispatch
-function octaveDispatch(pkt, raw) {
-    if (raw.includes("find") || raw.includes("scan")) {
-        const t = raw.replace("find", "").replace("scan", "").trim();
-        return "Semantic links for '" + t + "':\n" + octaveSemantic(t);
+    h1 {
+        text-align: center;
+        font-size: 32px;
     }
-    return "Octave OS: Command acknowledged.";
-}
 
-// ----------------------------
-//  ENTER KEY HANDLER — FIXED
-// ----------------------------
-input.addEventListener("keydown", async function (e) {
+    #terminal {
+        width: 100%;
+        height: 350px;
+        background: #042445;
+        color: #27ffff;
+        padding: 20px;
+        border-radius: 12px;
+        overflow-y: auto;
+        white-space: pre-line;
+        font-size: 18px;
+        margin-bottom: 20px;
+    }
 
-    // Only trigger on Enter
-    if (e.key !== "Enter") return;
+    #input {
+        width: 100%;
+        padding: 14px;
+        font-size: 18px;
+        border-radius: 10px;
+        border: 2px solid #000;
+    }
 
-    const cmd = input.value.trim();
-    if (cmd.length === 0) return;
+    footer {
+        margin-top: 20px;
+        text-align: center;
+        font-size: 14px;
+        opacity: 0.6;
+    }
+</style>
 
-    // ---- Echo locally ----
-    terminal.innerHTML += "\n∞ > " + cmd;
+</head>
+<body>
 
-    // ---- Write to repo memory ----
-    writeToRepo(cmd);
+<h1>Octave OS — Infinity Terminal</h1>
 
-    // ---- Send to GitHub Action / Octave bridge ----
-    sendToOctave(cmd);
+<div id="terminal">
+Octave OS v0.12 — AI Knowledge Vault Ready.
 
-    // ---- Existing Octave OS workflow ----
-    const packet = octaveEncode(cmd);
-    const out = octaveDispatch(packet, cmd);
+Type a command and press Enter.
+</div>
 
-    terminal.innerHTML += "\n" + out + "\n";
+<input id="input" placeholder="Type here and press Enter…" />
 
-    // ---- Keep scroll behavior ----
-    terminal.scrollTop = terminal.scrollHeight;
+<footer>
+Powered by Infinity • Designed by Kris Watson & ChatGPT
+</footer>
 
-    // ---- Clear input ----
-    input.value = "";
-});
-
-</script>
-<!-- === OCTAVE OS WORKFLOW BRIDGE === -->
 <script>
+/* ===================================================
+   GITHUB ACTION HOOK — message sender
+   =================================================== */
 async function sendToOctave(text) {
-    await fetch("https://api.github.com/repos/pewpi-infinity/i/dispatches", {
-        method: "POST",
-        headers: {
-            "Accept": "application/vnd.github+json",
-            "Authorization": "Bearer YOUR_PAT_HERE"
-        },
-        body: JSON.stringify({
-            event_type: "octave_input",
-            client_payload: { message: text }
-        })
-    });
+    try {
+        // This is the endpoint made by your GitHub Action
+        await fetch(
+            "https://api.github.com/repos/pewpi-infinity/i/dispatches",
+            {
+                method: "POST",
+                headers: {
+                    "Accept": "application/vnd.github+json",
+                    "Content-Type": "application/json",
+                    // The token WILL be replaced by workflow later.
+                    // We keep this blank until backend is ready.
+                    "Authorization": "Bearer REPLACE_WITH_PEWPI_PAT"
+                },
+                body: JSON.stringify({
+                    event_type: "octave_message",
+                    client_payload: { text }
+                })
+            }
+        );
+    } catch (err) {
+        console.log("sendToOctave() failed:", err);
+    }
 }
+
+/* ===================================================
+   TERMINAL LOGIC
+   =================================================== */
+const terminal = document.getElementById("terminal");
+const input = document.getElementById("input");
+
+input.addEventListener("keydown", function(e) {
+    if (e.key === "Enter") {
+        const userInput = input.value.trim();
+        if (!userInput) return;
+
+        // Print to terminal
+        terminal.innerHTML += "\n∞ > " + userInput;
+        terminal.scrollTop = terminal.scrollHeight;
+
+        // Send to GH workflow (safe even if token missing)
+        sendToOctave(userInput);
+
+        // Clear bar
+        input.value = "";
+    }
+});
 </script>
 
+</body>
+</html>
