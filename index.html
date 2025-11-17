@@ -90,6 +90,7 @@
     <div class="controls">
         <select id="method">
             <option value="github">GitHub (direct commit from browser)</option>
+            <option value="commit-server">Commit Server (secure server-side)</option>
             <option value="server">Local server (POST /log)</option>
             <option value="fs">Local file (File System Access API)</option>
         </select>
@@ -98,14 +99,21 @@
     </div>
 
     <input id="cmd" placeholder="Type here…" autocomplete="off" autocorrect="off" autocapitalize="off" />
-    <div class="note">Note: GitHub method will commit to pewpi-infinity/i logs/txt.log using the token you provide. Keep token secret.</div>
+    <div class="note">Note: GitHub method will commit to pewpi-infinity/i logs/txt.log using the token you provide. Commit Server is recommended for security. Keep tokens secret.</div>
 
     <footer>
         Powered by Infinity • Designed by Kris Watson & ChatGPT
     </footer>
 </div>
 
+<!-- Include commit-client.js -->
+<script src="/static/js/commit-client.js"></script>
 <script>
+// Configure commit server (set these via server-side rendering in production)
+// For local development, set COMMIT_SECRET here or via server configuration
+// window.COMMIT_SECRET = 'your-secret-here'; // DO NOT commit actual secrets
+// window.COMMIT_SERVER_URL = 'http://localhost:3000/commit'; // Optional override
+
 const terminal = document.getElementById("terminal");
 const input = document.getElementById("cmd");
 const methodSelect = document.getElementById("method");
@@ -237,6 +245,28 @@ async function sendToGitHub(text) {
     }
 }
 
+// Commit Server method (secure server-side commit)
+async function sendToCommitServer(text) {
+    if (typeof CommitClient === 'undefined') {
+        printToTerminal('✘ CommitClient not loaded. Ensure commit-client.js is included.');
+        return;
+    }
+
+    if (!window.COMMIT_SECRET) {
+        printToTerminal('✘ COMMIT_SECRET not configured. Set window.COMMIT_SECRET in your environment.');
+        printToTerminal('   For local testing, you can set it in the script or use server configuration.');
+        return;
+    }
+
+    try {
+        const result = await CommitClient.send(text);
+        printToTerminal('✔ logged to GitHub via commit server');
+        printToTerminal('  commit: ' + result.commit.substring(0, 7));
+    } catch (err) {
+        printToTerminal('✘ commit server error: ' + err.message);
+    }
+}
+
 input.addEventListener('keydown', function (e) {
     if (e.key === 'Enter') {
         const text = input.value.trim();
@@ -245,7 +275,8 @@ input.addEventListener('keydown', function (e) {
         printToTerminal('∞ > ' + text);
 
         const method = methodSelect.value;
-        if (method === 'server') sendToServer(text);
+        if (method === 'commit-server') sendToCommitServer(text);
+        else if (method === 'server') sendToServer(text);
         else if (method === 'fs') sendToFS(text);
         else if (method === 'github') sendToGitHub(text);
 
