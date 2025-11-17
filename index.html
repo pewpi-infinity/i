@@ -1,262 +1,75 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Octave OS — Infinity Terminal (Frontend-only GitHub Logger)</title>
-
-<style>
-    /* Basic reset */
-    *, *::before, *::after { box-sizing: border-box; }
-
-    body {
-        background: #dfe9f5;
-        font-family: monospace;
-        padding: 20px;
-        margin: 0;
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
-        color: #042445;
-    }
-
-    .container {
-        max-width: 820px;
-        margin: 0 auto;
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-    }
-
-    h1 {
-        text-align: center;
-        font-size: 26px;
-        margin: 6px 0 10px 0;
-    }
-
-    #terminal {
-        width: 100%;
-        height: 52vh;
-        min-height: 220px;
-        background: #042445;
-        color: #27ffff;
-        padding: 16px;
-        border-radius: 12px;
-        overflow-y: auto;
-        white-space: pre-line;
-        font-size: 16px;
-        line-height: 1.35;
-        margin-bottom: 4px;
-    }
-
-    #cmd {
-        width: 100%;
-        padding: 12px 14px;
-        font-size: 16px;
-        border-radius: 10px;
-        border: 2px solid #000;
-        outline: none;
-        background: #fff;
-    }
-
-    .controls { display:flex; gap:8px; align-items:center; }
-    .controls input[type=text] { padding:8px; font-size:14px; }
-    .note { font-size:12px; opacity:0.8; }
-
-    footer {
-        margin-top: 8px;
-        text-align: center;
-        font-size: 13px;
-        opacity: 0.7;
-    }
-
-    @media (max-width: 480px) {
-        body { padding: 12px; }
-        h1 { font-size: 20px; }
-        #terminal { font-size: 15px; border-radius: 10px; padding: 12px; }
-        #cmd { padding: 10px; font-size: 15px; }
-    }
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Octave OS - Infinity Terminal</title>
+  <style>
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; background:#e9f0f6; color:#0b2a3d; padding:20px; }
+    .terminal { background:#052b3a; color:#7be6ff; padding:18px; border-radius:8px; max-width:760px; margin: 0 auto 20px; font-family: monospace; }
+    .logger { max-width:760px; margin: 0 auto; background:#fff; padding:16px; border-radius:8px; box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
+    textarea { width:100%; height:120px; font-family: inherit; font-size:14px; padding:8px; box-sizing:border-box; }
+    button { padding:8px 12px; font-size:14px; margin-top:8px; }
+    #log-status { display:block; margin-top:8px; color:#333; }
+  </style>
 </head>
-
 <body>
-<div class="container">
-    <h1>Octave OS — Infinity Terminal</h1>
+  <div class="terminal">
+    <div>Octave OS v0.12 - Frontend-only logger ready.</div>
+    <div style="margin-top:8px; color:#9ee6ff;">Choose a logging method and press Enter.</div>
+  </div>
 
-    <div id="terminal" role="log" aria-live="polite">
-        Octave OS v0.12 — Frontend-only logger ready.
-        Choose a logging method and press Enter.
+  <div class="logger">
+    <h3>Frontend logger</h3>
+    <label for="log-input">Type conversation text to record:</label>
+    <textarea id="log-input" placeholder="Type message to append to logs/txt.log..."></textarea>
+    <div>
+      <button id="log-send-btn">Send to log</button>
+      <button id="log-clear-btn">Clear</button>
     </div>
+    <span id="log-status"></span>
+    <p style="font-size:12px; color:#666; margin-top:12px;">
+      Note: The frontend will POST typed text to the local commit server which commits to GitHub.
+      Do NOT store GitHub tokens in the browser.
+    </p>
+  </div>
 
-    <div class="controls">
-        <select id="method">
-            <option value="github">GitHub (direct commit from browser)</option>
-            <option value="server">Local server (POST /log)</option>
-            <option value="fs">Local file (File System Access API)</option>
-        </select>
-        <input id="token" type="text" placeholder="GitHub token (store local)" style="width:360px" />
-        <button id="saveToken">Save Token</button>
-    </div>
+  <!-- Commit client script (served from /static/js/commit-client.js) -->
+  <script src="/static/js/commit-client.js"></script>
+  <script>
+    // OPTIONAL: if you want to embed the commit secret into the page (less secure),
+    // set window.COMMIT_SECRET = 'your-secret-here' on the server-rendered page.
+    // window.COMMIT_SECRET = '';
 
-    <input id="cmd" placeholder="Type here…" autocomplete="off" autocorrect="off" autocapitalize="off" />
-    <div class="note">Note: GitHub method will commit to pewpi-infinity/i logs/txt.log using the token you provide. Keep token secret.</div>
+    document.addEventListener('DOMContentLoaded', function() {
+      const input = document.getElementById('log-input');
+      const sendBtn = document.getElementById('log-send-btn');
+      const clearBtn = document.getElementById('log-clear-btn');
+      const status = document.getElementById('log-status');
 
-    <footer>
-        Powered by Infinity • Designed by Kris Watson & ChatGPT
-    </footer>
-</div>
+      function setStatus(msg, isError) {
+        status.textContent = msg;
+        status.style.color = isError ? '#b00020' : '#0a6f2b';
+      }
 
-<script>
-const terminal = document.getElementById("terminal");
-const input = document.getElementById("cmd");
-const methodSelect = document.getElementById("method");
-const tokenInput = document.getElementById("token");
-const saveTokenBtn = document.getElementById("saveToken");
-
-const OWNER = 'pewpi-infinity';
-const REPO = 'i';
-const PATH = 'logs/txt.log';
-
-// Load saved token from localStorage
-tokenInput.value = localStorage.getItem('GH_LOG_TOKEN') || '';
-
-saveTokenBtn.addEventListener('click', () => {
-    const t = tokenInput.value.trim();
-    if (t) {
-        localStorage.setItem('GH_LOG_TOKEN', t);
-        printToTerminal('✔ token saved to localStorage');
-    } else {
-        localStorage.removeItem('GH_LOG_TOKEN');
-        printToTerminal('⚠ token cleared');
-    }
-});
-
-function printToTerminal(text) {
-    const escaped = String(text)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;");
-    terminal.innerHTML += "\n" + escaped;
-    terminal.scrollTop = terminal.scrollHeight;
-}
-
-async function sendToServer(text) {
-    try {
-        const response = await fetch('/log', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text })
-        });
-        const data = await response.json();
-        if (data && data.status === 'ok') printToTerminal('✔ logged to server');
-        else printToTerminal('✘ server error');
-    } catch (err) {
-        printToTerminal('✘ backend offline: ' + err.message);
-    }
-}
-
-// File System Access API method (for Chromium browsers)
-async function sendToFS(text) {
-    if (!window.showSaveFilePicker && !window.chooseFileSystemEntries) {
-        printToTerminal('✘ File System Access API not available in this browser');
-        return;
-    }
-    try {
-        // Try to open existing file or prompt user to pick
-        const options = {
-            types: [{
-                description: 'Text log',
-                accept: {'text/plain': ['.txt']}
-            }]
-        };
-        // showSaveFilePicker is modern; chooseFileSystemEntries older
-        const handle = await window.showSaveFilePicker ? await window.showSaveFilePicker(options) : await window.chooseFileSystemEntries({type: 'save-file'});
-        const writable = await handle.createWritable();
-        // Read existing contents if possible (best-effort)
+      sendBtn.addEventListener('click', async function() {
+        const text = input.value;
+        if (!text || !text.trim()) { setStatus('Type something to send', true); return; }
+        setStatus('Sending...', false);
         try {
-            const fr = await handle.getFile();
-            const txt = await fr.text();
-            await writable.write(txt + '\n' + text + '\n');
-        } catch (e) {
-            await writable.write(text + '\n');
+          const result = await window.CommitClient.send(text);
+          setStatus('Logged — commit: ' + (result.commit || '(unknown)'), false);
+        } catch (err) {
+          console.error('Commit error', err);
+          setStatus('Error: ' + (err.message || 'unknown'), true);
         }
-        await writable.close();
-        printToTerminal('✔ written to local file');
-    } catch (err) {
-        printToTerminal('✘ FS error: ' + err.message);
-    }
-}
+      });
 
-// GitHub direct commit method (no server): uses GitHub Contents API
-async function sendToGitHub(text) {
-    const token = localStorage.getItem('GH_LOG_TOKEN') || tokenInput.value.trim();
-    if (!token) { printToTerminal('✘ No token set. Enter it and Save Token.'); return; }
-
-    const apiBase = 'https://api.github.com';
-    const fileUrl = `${apiBase}/repos/${OWNER}/${REPO}/contents/${PATH}`;
-
-    try {
-        // Get current file (if exists) to obtain sha and existing content
-        const getResp = await fetch(fileUrl, { headers: { 'Authorization': 'token ' + token, 'Accept': 'application/vnd.github+json' } });
-        let sha = null; let existing = '';
-        if (getResp.status === 200) {
-            const obj = await getResp.json();
-            sha = obj.sha;
-            existing = atob(obj.content.replace(/\n/g, ''));
-        } else if (getResp.status === 404) {
-            // file not found -> create new
-            existing = '';
-            sha = null;
-        } else {
-            const errText = await getResp.text();
-            printToTerminal('✘ GitHub GET error: ' + getResp.status + ' ' + errText);
-            return;
-        }
-
-        // Append new line
-        const newContent = existing + (existing && !existing.endsWith('\n') ? '\n' : '') + `[${new Date().toISOString()}] ${text}` + '\n';
-        const b64 = btoa(unescape(encodeURIComponent(newContent)));
-
-        const body = { message: 'Frontend log update', content: b64 };
-        if (sha) body.sha = sha;
-
-        const putResp = await fetch(fileUrl, {
-            method: 'PUT',
-            headers: { 'Authorization': 'token ' + token, 'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json' },
-            body: JSON.stringify(body)
-        });
-
-        if (putResp.status === 201 || putResp.status === 200) {
-            printToTerminal('✔ logged to GitHub repo (committed)');
-        } else {
-            const txt = await putResp.text();
-            printToTerminal('✘ GitHub PUT error: ' + putResp.status + ' ' + txt);
-        }
-
-    } catch (err) {
-        printToTerminal('✘ GitHub error: ' + err.message);
-    }
-}
-
-input.addEventListener('keydown', function (e) {
-    if (e.key === 'Enter') {
-        const text = input.value.trim();
-        if (!text) return;
+      clearBtn.addEventListener('click', function() {
         input.value = '';
-        printToTerminal('∞ > ' + text);
-
-        const method = methodSelect.value;
-        if (method === 'server') sendToServer(text);
-        else if (method === 'fs') sendToFS(text);
-        else if (method === 'github') sendToGitHub(text);
-
-        // local immediate response
-        printToTerminal('Roger.');
-    }
-});
-
-// focus UX
-window.addEventListener('load', () => { input.focus(); });
-terminal.addEventListener('click', () => { input.focus(); });
-</script>
+        setStatus('', false);
+      });
+    });
+  </script>
 </body>
 </html>
