@@ -5,12 +5,23 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Octave OS — Octave Logger & Pewpi Secret Encoder</title>
   <style>
-    /* preserve original look & feel */
-    body { font-family: system-ui, -apple-system, Roboto, "Helvetica Neue", Arial; background:#e9f1f5; color:#08303b; padding:20px; }
-    .terminal { background:#0b3b4a; color:#7be6ff; padding:18px; border-radius:10px; max-width:920px; margin: 0 auto 18px; font-family: monospace; }
-    .card { background:#ffffff; max-width:920px; margin: 0 auto; padding:18px; border-radius:10px; box-shadow: 0 6px 18px rgba(8,48,59,0.06); }
-    h1 { margin:0 0 8px 0; font-size:20px; color:#08303b; }
-    label { color:#08303b; font-weight:600; display:block; margin-bottom:6px; }
+    /* preserved look & feel; restored the original cool blue text color for the terminal */
+    :root{
+      --page-bg: #e9f1f5;
+      --terminal-bg: #0b3b4a; /* dark teal terminal background */
+      --terminal-text-blue: #7be6ff; /* the "cool" blue cyan used for terminal text */
+      --card-bg: #ffffff;
+      --muted: #667a80;
+      --accent-dark: #08303b;
+      --panel-bg: #f8fbfc;
+      --panel-border: #e6eef0;
+    }
+
+    body { font-family: system-ui, -apple-system, Roboto, "Helvetica Neue", Arial; background:var(--page-bg); color:var(--accent-dark); padding:20px; }
+    .terminal { background:var(--terminal-bg); color:var(--terminal-text-blue); padding:18px; border-radius:10px; max-width:920px; margin: 0 auto 18px; font-family: monospace; }
+    .card { background:var(--card-bg); max-width:920px; margin: 0 auto; padding:18px; border-radius:10px; box-shadow: 0 6px 18px rgba(8,48,59,0.06); }
+    h1 { margin:0 0 8px 0; font-size:20px; color:var(--accent-dark); }
+    label { color:var(--accent-dark); font-weight:600; display:block; margin-bottom:6px; }
     textarea, input[type="text"] { width:100%; font-size:14px; padding:10px; box-sizing:border-box; border:1px solid #d6e2e6; border-radius:6px; }
     textarea { min-height:120px; resize:vertical; }
     .controls { margin-top:12px; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
@@ -18,19 +29,19 @@
     .row { display:flex; gap:8px; align-items:center; }
     .col { flex:1; }
     .boxed { border:1px dashed #d6e2e6; padding:12px; border-radius:6px; background:#fbfdfe; margin-top:12px; }
-    .label-small { font-size:13px; color:#667a80; margin-top:10px; }
+    .label-small { font-size:13px; color:var(--muted); margin-top:10px; }
     #status { display:block; margin-top:12px; min-height:20px; color:#b00020; font-weight:600; }
-    @media (max-width:720px){ .terminal,.card{padding:12px} .row{flex-direction:column} }
-    .toggle { display:inline-flex; gap:6px; align-items:center; padding:6px; background:#eef6f8; border-radius:6px; border:1px solid #d6e2e6; }
     .outputs { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:14px; }
-    @media (max-width:760px){ .outputs { grid-template-columns: 1fr; } }
-    .panel { background:#f8fbfc; border-radius:6px; padding:10px; min-height:120px; border:1px solid #e6eef0; white-space:pre-wrap; overflow:auto; }
+    @media (max-width:760px){ .outputs { grid-template-columns:1fr } }
+    .panel { background:var(--panel-bg); border-radius:6px; padding:10px; min-height:140px; border:1px solid var(--panel-border); white-space:pre-wrap; overflow:auto; }
+    .muted { color:var(--muted); font-size:13px; }
+    .toggle { display:inline-flex; gap:6px; align-items:center; padding:6px; background:#eef6f8; border-radius:6px; border:1px solid #d6e2e6; }
   </style>
 </head>
 <body>
   <div class="terminal">
     Octave OS — Octave Logger & Pewpi Secret Encoder
-    <div style="margin-top:8px; color:#baf2ff;">Type a message, toggle mode, and press Submit. The page runs fully in your browser; no secrets are sent unless you choose to.</div>
+    <div style="margin-top:8px; color:var(--terminal-text-blue);">Type a message, toggle mode, and press Submit. The page runs fully in your browser; no secrets are sent unless you choose to.</div>
   </div>
 
   <div class="card">
@@ -49,8 +60,8 @@
       <span id="status" aria-live="polite"></span>
     </div>
 
-    <div class="label-small">Notes: 
-      - Conversation mode: sends the input to a local /ai endpoint (if available) to retrieve AI responses. If no server is available a local demo AI will respond. 
+    <div class="label-small">Notes:
+      - Conversation mode: sends the input to a local /ai endpoint (if available) to retrieve AI responses. If no server is available a local demo AI will respond.
       - Encode mode: encrypts the input into a single encoded blob. The passphrase is required to decode.
     </div>
 
@@ -187,8 +198,7 @@
 
       // simulate local AI response if no server exists
       async function simulateAiResponse(prompt) {
-        // quick transform to look "AI-like" — replace with server /ai endpoint if you have one
-        await new Promise(r => setTimeout(r, 300)); // simulate delay
+        await new Promise(r => setTimeout(r, 300));
         const lines = [
           "Octave OS analysis:",
           `"${prompt.slice(0,200)}"`,
@@ -197,12 +207,11 @@
         return lines.join("\n");
       }
 
-      // attempt to call local /ai endpoint; fallback to simulateAiResponse if unavailable
       async function fetchAiResponse(prompt) {
         try {
           const resp = await fetch('/ai', { method: 'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ prompt }) });
           if (!resp.ok) throw new Error('no ai');
-          const j = await resp.json(); // expecting { text: '...' }
+          const j = await resp.json();
           return j.text || JSON.stringify(j);
         } catch (e) {
           return await simulateAiResponse(prompt);
@@ -215,14 +224,11 @@
         if (!text.trim()) { setStatus('Type something to submit', true); return; }
 
         if (modeToggle.checked) {
-          // Conversation mode
           setStatus('Getting AI response...', false);
           const aiText = await fetchAiResponse(text);
-          // append to AI output (keep history)
           aiOutput.textContent = (aiOutput.textContent ? aiOutput.textContent + "\n\n" : "") + "USER: " + text + "\n\nAI: " + aiText;
           setStatus('AI response appended.');
           if (autoEncode) {
-            // encode aiText using provided passphrase or auto-generate
             let pass = passphraseEl.value;
             if (!pass) {
               pass = genPassphrase(16);
@@ -238,7 +244,6 @@
             }
           }
         } else {
-          // Encode mode: encrypt the input into encoded output
           let pass = passphraseEl.value;
           if (!pass) {
             pass = genPassphrase(16);
@@ -251,12 +256,12 @@
             const encoded = await encryptMessage(text, pass, 200000);
             encodedOutput.textContent = encodedOutput.textContent ? encodedOutput.textContent + "\n\n" + encoded : encoded;
             setStatus('Message encrypted. Share encoded blob + passphrase to recipient.');
-            // Also store a simplified "ai conversation context" line into aiOutput for Octave ingestion if desired
             aiOutput.textContent = (aiOutput.textContent ? aiOutput.textContent + "\n\n" : "") + "ENCODED_MESSAGE_CREATED_AT: " + new Date().toISOString();
           } catch (e) {
             setStatus('Encryption failed: ' + e.message, true);
           }
         }
+        inputBox.value = '';
       });
 
       decryptBtn.addEventListener('click', async () => {
@@ -265,13 +270,11 @@
         if (!pass.trim()) { setStatus('Enter passphrase to retrieve', true); return; }
         const enc = encodedOutput.textContent || '';
         if (!enc.trim()) { setStatus('No encoded text available in Encoded Output', true); return; }
-        // if multiple blobs present, decrypt the last one
         const parts = enc.trim().split(/\n\s*\n/);
         const last = parts[parts.length - 1].trim();
         try {
           setStatus('Decrypting...', false);
           const decoded = await decryptMessage(last, pass, 200000);
-          // show decoded message in AI output area as retrieved content
           aiOutput.textContent = (aiOutput.textContent ? aiOutput.textContent + "\n\n" : "") + "RETRIEVED: " + decoded;
           setStatus('Retrieved and appended to AI Conversation Output.');
         } catch (e) {
