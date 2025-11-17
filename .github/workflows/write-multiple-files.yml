@@ -23,10 +23,10 @@ jobs:
   write-files:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout target branch
+      - name: Checkout workflow source (ensure workflow file present)
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.inputs.branch }}
+          ref: main
           persist-credentials: true
 
       - name: Prepare temp dir
@@ -34,6 +34,20 @@ jobs:
           set -euo pipefail
           TMPDIR=$(mktemp -d)
           echo "$TMPDIR" > /tmp/_wf_tmpdir
+
+      - name: Ensure target branch exists and checkout
+        env:
+          TARGET_BRANCH: ${{ github.event.inputs.branch }}
+        run: |
+          set -euo pipefail
+          BRANCH="${TARGET_BRANCH:-auto/commit-integration}"
+          git fetch origin --prune
+          if git ls-remote --heads origin "$BRANCH" | grep -q "$BRANCH"; then
+            git checkout -B "$BRANCH" "origin/$BRANCH"
+          else
+            git checkout -b "$BRANCH"
+            git push -u origin "$BRANCH"
+          fi
 
       - name: Decode and extract archive
         env:
@@ -48,15 +62,32 @@ jobs:
             exit 1
           fi
 
-          # Decode base64 to a temporary file
-          echo "$ARCHIVE_B64" | base64 --decode > "$TMPDIR/archive" || ( echo "base64 decode failed"; exit 1 )
+          # sanitize: remove whitespace and any non-base64 characters, produce single-line b64
+          echo "$ARCHIVE_B64" | tr -d '\n' | sed 's/[^A-Za-z0-9+\/=]//g' > "$TMPDIR/archive.b64"
+          echo "Cleaned base64 length: $(wc -c < "$TMPDIR/archive.b64")"
+
+          # try to decode, capture stderr for diagnostics
+          if ! base64 --decode "$TMPDIR/archive.b64" > "$TMPDIR/archive" 2> "$TMPDIR/b64.err"; then
+            echo "base64 decode failed; stderr:" >&2
+            sed -n '1,200p' "$TMPDIR/b64.err" >&2 || true
+            exit 1
+          fi
 
           if [ "$ARCHIVE_TYPE" = "tar.gz" ] || [ "$ARCHIVE_TYPE" = "tgz" ]; then
             mv "$TMPDIR/archive" "$TMPDIR/archive.tar.gz"
+            # test list first for clearer failure messages
+            if ! tar -tzf "$TMPDIR/archive.tar.gz" > "$TMPDIR/tar.list" 2> "$TMPDIR/tar.err"; then
+              echo "tar list failed; stderr:" >&2
+              sed -n '1,200p' "$TMPDIR/tar.err" >&2 || true
+              exit 1
+            fi
             tar -xzf "$TMPDIR/archive.tar.gz" -C "$TMPDIR"
           elif [ "$ARCHIVE_TYPE" = "zip" ]; then
             mv "$TMPDIR/archive" "$TMPDIR/archive.zip"
-            unzip -q "$TMPDIR/archive.zip" -d "$TMPDIR"
+            if ! unzip -q "$TMPDIR/archive.zip" -d "$TMPDIR"; then
+              echo "unzip failed" >&2
+              exit 1
+            fi
           else
             echo "Unsupported archive_type: $ARCHIVE_TYPE" >&2
             exit 1
@@ -66,8 +97,7 @@ jobs:
         run: |
           set -euo pipefail
           TMPDIR=$(cat /tmp/_wf_tmpdir)
-          # Use rsync to copy everything except .git
-          rsync -av --exclude='.git' "$TMPDIR"/ ./ 
+          rsync -av --exclude='.git' "$TMPDIR"/ ./
           echo "Copied files from archive into repo working tree."
 
       - name: Show changed files
