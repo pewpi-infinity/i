@@ -3,9 +3,9 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Octave OS — Infinity Terminal (Logger + Pewpi Encoder)</title>
+  <title>Octave OS — Encode / Secret Builder</title>
   <style>
-    /* original color / feel preserved */
+    /* preserve original look & feel */
     body { font-family: system-ui, -apple-system, Roboto, "Helvetica Neue", Arial; background:#e9f1f5; color:#08303b; padding:20px; }
     .terminal { background:#0b3b4a; color:#7be6ff; padding:18px; border-radius:10px; max-width:820px; margin: 0 auto 18px; font-family: monospace; }
     .card { background:#ffffff; max-width:820px; margin: 0 auto; padding:18px; border-radius:10px; box-shadow: 0 6px 18px rgba(8,48,59,0.06); }
@@ -16,226 +16,226 @@
     button { padding:8px 12px; border-radius:6px; border:1px solid #bfcfd3; background:#f6f8f9; cursor:pointer; }
     #status { display:block; margin-top:12px; min-height:20px; color:#b00020; font-weight:600; }
     .small { font-size:13px; color:#667a80; margin-top:10px; }
-    input[type="text"], input[type="password"] { padding:8px; border-radius:6px; border:1px solid #d6e2e6; width:100%; box-sizing:border-box; }
+    input[type="text"] { padding:8px; border-radius:6px; border:1px solid #d6e2e6; width:100%; box-sizing:border-box; }
     .row { display:flex; gap:8px; align-items:center; }
     .col { flex:1; }
-    .boxed { border:1px dashed #d6e2e6; padding:8px; border-radius:6px; background:#fbfdfe; }
+    .boxed { border:1px dashed #d6e2e6; padding:12px; border-radius:6px; background:#fbfdfe; margin-top:12px; }
     @media (max-width:560px){ .terminal,.card{padding:12px} .row{flex-direction:column} }
   </style>
 </head>
 <body>
   <div class="terminal">
-    Octave OS v0.12 — Frontend logger + Pewpi encoder.
-    <div style="margin-top:8px; color:#baf2ff;">Use the encoder to safely produce encoded text locally. Do NOT paste raw secrets into public pages.</div>
+    Octave OS v0.12 — Secret Encoder (Pewpi)
+    <div style="margin-top:8px; color:#baf2ff;">Type a message, press "Create secret" — it gives you an encoded blob and a passphrase to share securely.</div>
   </div>
 
   <div class="card">
-    <h1>Frontend logger</h1>
+    <h1>Quick: create a secret from your message</h1>
 
-    <label for="log-input">Type conversation text to record:</label>
-    <textarea id="log-input" placeholder="Type message to append to logs/txt.log..."></textarea>
-
-    <div style="margin-top:10px;">
-      <label for="commit-secret">Commit secret (session only)</label>
-      <input id="commit-secret" type="password" placeholder="Paste COMMIT_SECRET for this session (not a PAT)">
-      <div class="small">Paste only the small session secret here. Do NOT paste raw GitHub tokens into this page.</div>
-    </div>
+    <label for="message">Message to encode</label>
+    <textarea id="message" placeholder="Write the message or conversation text you want to lock into a secret..."></textarea>
 
     <div class="controls">
-      <button id="send-log">Send to log</button>
-      <button id="clear-log">Clear</button>
-      <span id="status" aria-live="polite"></span>
+      <button id="create-secret">Create secret (encode)</button>
+      <button id="generate-pass">Generate passphrase</button>
+      <button id="clear-message">Clear</button>
+    </div>
+
+    <div id="status" aria-live="polite"></div>
+
+    <div class="boxed">
+      <label for="passphrase">Passphrase (automatically generated or paste your own)</label>
+      <div class="row" style="margin-bottom:8px;">
+        <input id="passphrase" type="text" placeholder="Passphrase for recipient (keep private)" />
+        <button id="copy-pass">Copy</button>
+      </div>
+
+      <label for="encoded">Encoded secret (share this with the recipient)</label>
+      <div class="row" style="margin-bottom:8px;">
+        <textarea id="encoded" readonly placeholder="Encoded secret will appear here (safe to store/share with passphrase)"></textarea>
+      </div>
+
+      <div class="controls">
+        <button id="copy-encoded">Copy encoded</button>
+        <button id="download-encoded">Download encoded</button>
+      </div>
+
+      <div class="small" style="margin-top:8px;">
+        How it works: the page derives a strong key from the passphrase (PBKDF2) and encrypts your message with AES‑GCM. Output is a single base64 string containing salt+iv+ciphertext. Recipient needs the base64 string + the passphrase to recover the message.
+      </div>
     </div>
 
     <hr style="margin:16px 0; opacity:0.08" />
 
-    <h1>Pewpi Encoder (in-page)</h1>
-    <div class="small">This built-in encoder encrypts or decrypts arbitrary text locally in your browser using a passphrase. It uses PBKDF2 → AES‑GCM. The page does NOT send your passphrase anywhere unless you explicitly paste the encoded output into a server field yourself. This is client-side only.</div>
+    <h1>Decode a secret</h1>
+    <label for="encoded-input">Paste encoded secret (base64)</label>
+    <textarea id="encoded-input" placeholder="Paste the encoded string here"></textarea>
 
-    <div style="margin-top:10px;" class="boxed">
-      <label for="plain-text">Text to encrypt / decrypt</label>
-      <textarea id="plain-text" placeholder="Enter any text to encrypt (e.g. note, PAT placeholder, phrase)..."></textarea>
+    <label for="passphrase-input" style="margin-top:8px;">Passphrase</label>
+    <input id="passphrase-input" type="text" placeholder="Enter passphrase to decrypt" />
 
-      <div style="margin-top:8px;" class="row">
-        <div class="col">
-          <label for="passphrase">Passphrase (used to derive key)</label>
-          <input id="passphrase" type="password" placeholder="Enter a strong passphrase (keep locally)">
-        </div>
-        <div style="width:160px;">
-          <label for="iterations">PBKDF2 iterations</label>
-          <input id="iterations" type="text" value="200000" />
-        </div>
-      </div>
-
-      <div class="controls">
-        <button id="encrypt-btn">Encrypt → produce encoded string</button>
-        <button id="decrypt-btn">Decrypt encoded string</button>
-        <button id="copy-out">Copy output</button>
-        <button id="download-out">Download</button>
-      </div>
-
-      <label for="output">Output (encoded / decoded)</label>
-      <textarea id="output" readonly placeholder="Encrypted output will appear here (BASE64: salt+iv+ciphertext)"></textarea>
-
-      <div class="small" style="margin-top:8px;">
-        How it works (short): a 16‑byte random salt + 12‑byte random IV are generated. Key is derived with PBKDF2(SHA‑256) using the passphrase and salt. AES‑GCM encrypts data. The single base64 string contains salt+iv+ciphertext for safe storage.
-      </div>
+    <div class="controls" style="margin-top:8px;">
+      <button id="decrypt-btn">Decrypt</button>
+      <button id="clear-decode">Clear</button>
     </div>
 
+    <label for="decoded-output" style="margin-top:8px;">Decoded message</label>
+    <textarea id="decoded-output" readonly placeholder="Decrypted text will appear here"></textarea>
+
     <p class="small" style="margin-top:12px;">
-      Security notes (short): this runs in your browser. Anyone with your passphrase or the encoded blob and the passphrase can recover plaintext. The page cannot guarantee exclusivity — browser JavaScript can be inspected. Keep the passphrase secret and do not paste raw secrets into public inputs.
+      Notes: Everything runs in your browser. Do not paste raw secrets into pages you don't control. Share the encoded string and passphrase only with the intended recipient.
     </p>
   </div>
 
   <script>
-    // Utility: base64 <-> Uint8Array
+    // Utilities for base64 and array conversions
     function toBase64(bytes) {
-      return btoa(String.fromCharCode(...new Uint8Array(bytes)));
+      let s = '';
+      const len = bytes.length;
+      for (let i = 0; i < len; i++) s += String.fromCharCode(bytes[i]);
+      return btoa(s);
     }
     function fromBase64(b64) {
-      const binary = atob(b64);
-      const len = binary.length;
-      const bytes = new Uint8Array(len);
-      for (let i=0;i<len;i++) bytes[i] = binary.charCodeAt(i);
-      return bytes;
+      const bin = atob(b64);
+      const len = bin.length;
+      const arr = new Uint8Array(len);
+      for (let i = 0; i < len; i++) arr[i] = bin.charCodeAt(i);
+      return arr;
     }
 
     async function deriveKey(passphrase, salt, iterations) {
       const enc = new TextEncoder();
-      const passKey = await crypto.subtle.importKey('raw', enc.encode(passphrase), {name: 'PBKDF2'}, false, ['deriveKey']);
+      const baseKey = await crypto.subtle.importKey('raw', enc.encode(passphrase), { name: 'PBKDF2' }, false, ['deriveKey']);
       const key = await crypto.subtle.deriveKey(
         { name: 'PBKDF2', salt: salt, iterations: iterations, hash: 'SHA-256' },
-        passKey,
+        baseKey,
         { name: 'AES-GCM', length: 256 },
         true,
-        ['encrypt','decrypt']
+        ['encrypt', 'decrypt']
       );
       return key;
     }
 
-    async function encryptText(plaintext, passphrase, iterations) {
+    async function encryptMessage(plaintext, passphrase, iterations = 200000) {
       const enc = new TextEncoder();
       const salt = crypto.getRandomValues(new Uint8Array(16));
       const iv = crypto.getRandomValues(new Uint8Array(12));
       const key = await deriveKey(passphrase, salt, iterations);
-      const ciphertext = await crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, key, enc.encode(plaintext));
-      // concat salt + iv + ciphertext
-      const combined = new Uint8Array(salt.byteLength + iv.byteLength + ciphertext.byteLength);
+      const ciphertext = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, enc.encode(plaintext));
+      // combine salt + iv + ciphertext
+      const ctArr = new Uint8Array(ciphertext);
+      const combined = new Uint8Array(salt.length + iv.length + ctArr.length);
       combined.set(salt, 0);
-      combined.set(iv, salt.byteLength);
-      combined.set(new Uint8Array(ciphertext), salt.byteLength + iv.byteLength);
+      combined.set(iv, salt.length);
+      combined.set(ctArr, salt.length + iv.length);
       return toBase64(combined);
     }
 
-    async function decryptText(b64, passphrase, iterations) {
-      try {
-        const combined = fromBase64(b64);
-        if (combined.length < 16+12+16) throw new Error('Input too short or invalid');
-        const salt = combined.slice(0,16);
-        const iv = combined.slice(16,28);
-        const ciphertext = combined.slice(28);
-        const key = await deriveKey(passphrase, salt, iterations);
-        const plainBuffer = await crypto.subtle.decrypt({ name:'AES-GCM', iv: iv }, key, ciphertext);
-        const dec = new TextDecoder();
-        return dec.decode(plainBuffer);
-      } catch (e) {
-        throw new Error('Decryption failed: ' + e.message);
-      }
+    async function decryptMessage(b64, passphrase, iterations = 200000) {
+      const combined = fromBase64(b64);
+      if (combined.length < 16 + 12 + 16) throw new Error('Encoded data is too short or invalid');
+      const salt = combined.slice(0, 16);
+      const iv = combined.slice(16, 28);
+      const ct = combined.slice(28);
+      const key = await deriveKey(passphrase, salt, iterations);
+      const plainBuffer = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ct);
+      return new TextDecoder().decode(plainBuffer);
     }
 
-    // Wire UI
+    // small passphrase generator (base64url-like)
+    function genPassphrase(lenBytes = 16) {
+      const arr = crypto.getRandomValues(new Uint8Array(lenBytes));
+      // base64 but URL-safe, remove padding
+      return toBase64(arr).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    }
+
+    // UI wiring
     document.addEventListener('DOMContentLoaded', () => {
-      // logger controls
-      const sendLog = document.getElementById('send-log');
-      const clearLog = document.getElementById('clear-log');
-      const logInput = document.getElementById('log-input');
-      const commitSecret = document.getElementById('commit-secret');
-      const status = document.getElementById('status');
+      const messageEl = document.getElementById('message');
+      const createBtn = document.getElementById('create-secret');
+      const genPassBtn = document.getElementById('generate-pass');
+      const passEl = document.getElementById('passphrase');
+      const encodedEl = document.getElementById('encoded');
+      const statusEl = document.getElementById('status');
+      const copyPass = document.getElementById('copy-pass');
+      const copyEnc = document.getElementById('copy-encoded');
+      const dlEnc = document.getElementById('download-encoded');
 
-      sendLog.addEventListener('click', async () => {
-        status.textContent = '';
-        const text = logInput.value || '';
-        const secret = commitSecret.value || '';
-        if (!text.trim()) { status.style.color='#b00020'; status.textContent = 'Type something to send'; return; }
-        if (!secret.trim()) { status.style.color='#b00020'; status.textContent = 'Paste COMMIT_SECRET (session only)'; return; }
-        status.style.color='#0a6f2b';
-        status.textContent = 'Sending...';
+      const encodedIn = document.getElementById('encoded-input');
+      const passIn = document.getElementById('passphrase-input');
+      const decryptBtn = document.getElementById('decrypt-btn');
+      const decodedOut = document.getElementById('decoded-output');
+
+      function setStatus(msg, error=false) {
+        statusEl.textContent = msg;
+        statusEl.style.color = error ? '#b00020' : '#0a6f2b';
+      }
+
+      genPassBtn.addEventListener('click', () => {
+        passEl.value = genPassphrase(16);
+        setStatus('Passphrase generated (copy and share securely).');
+      });
+
+      createBtn.addEventListener('click', async () => {
+        setStatus('', false);
+        encodedEl.value = '';
+        const text = messageEl.value || '';
+        if (!text.trim()) { setStatus('Type a message to encode.', true); return; }
+        if (!passEl.value.trim()) { // auto-generate if none
+          passEl.value = genPassphrase(16);
+          setStatus('No passphrase entered; one was generated for you.');
+        } else {
+          setStatus('Encrypting...', false);
+        }
         try {
-          // Note: by default we DO NOT send any token here. Server should have the token locally.
-          const resp = await fetch('/commit', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-Commit-Secret': secret },
-            body: JSON.stringify({ text })
-          });
-          const body = await resp.json().catch(()=>({}));
-          if (!resp.ok) { status.style.color='#b00020'; status.textContent = 'Error: ' + (body.error || resp.status); return; }
-          status.style.color='#0a6f2b';
-          status.textContent = 'Logged — commit: ' + (body.commit || '(unknown)');
-          logInput.value = '';
+          const encoded = await encryptMessage(text, passEl.value, 200000);
+          encodedEl.value = encoded;
+          setStatus('Encoded — share the encoded string + passphrase to the recipient (keep passphrase private).');
         } catch (e) {
-          status.style.color='#b00020';
-          status.textContent = 'Network error: ' + e.message;
+          console.error(e);
+          setStatus('Encryption failed: ' + (e.message || e), true);
         }
       });
 
-      clearLog.addEventListener('click', () => { logInput.value=''; status.textContent=''; });
-
-      // encoder controls
-      const plain = document.getElementById('plain-text');
-      const pass = document.getElementById('passphrase');
-      const iterInput = document.getElementById('iterations');
-      const out = document.getElementById('output');
-      const encBtn = document.getElementById('encrypt-btn');
-      const decBtn = document.getElementById('decrypt-btn');
-      const copyBtn = document.getElementById('copy-out');
-      const dlBtn = document.getElementById('download-out');
-
-      encBtn.addEventListener('click', async () => {
-        out.value = '';
-        try {
-          const iters = Math.max(1000, parseInt(iterInput.value) || 200000);
-          if (!pass.value) { out.value = 'Enter a passphrase (will not be sent)'; return; }
-          if (!plain.value) { out.value = 'Enter text to encrypt'; return; }
-          out.value = 'Encrypting...';
-          const encoded = await encryptText(plain.value, pass.value, iters);
-          out.value = encoded;
-        } catch (e) {
-          out.value = 'Encryption error: ' + e.message;
-        }
+      copyPass.addEventListener('click', async () => {
+        if (!passEl.value) return;
+        try { await navigator.clipboard.writeText(passEl.value); setStatus('Passphrase copied.'); } catch(e) { setStatus('Copy failed', true); }
       });
 
-      decBtn.addEventListener('click', async () => {
-        out.value = '';
-        try {
-          const iters = Math.max(1000, parseInt(iterInput.value) || 200000);
-          if (!pass.value) { out.value = 'Enter passphrase to decrypt'; return; }
-          if (!plain.value) { out.value = 'Paste encoded string into the text box above to decrypt'; return; }
-          out.value = 'Decrypting...';
-          const decoded = await decryptText(plain.value.trim(), pass.value, iters);
-          out.value = decoded;
-        } catch (e) {
-          out.value = 'Decryption error: ' + e.message;
-        }
+      copyEnc.addEventListener('click', async () => {
+        if (!encodedEl.value) return;
+        try { await navigator.clipboard.writeText(encodedEl.value); setStatus('Encoded string copied.'); } catch(e) { setStatus('Copy failed', true); }
       });
 
-      copyBtn.addEventListener('click', async () => {
-        if (!out.value) return;
-        try {
-          await navigator.clipboard.writeText(out.value);
-        } catch (e) {
-          // fallback
-          const ta = document.createElement('textarea'); ta.value = out.value; document.body.appendChild(ta); ta.select();
-          document.execCommand('copy'); ta.remove();
-        }
-      });
-
-      dlBtn.addEventListener('click', () => {
-        if (!out.value) return;
-        const blob = new Blob([out.value], {type:'text/plain;charset=utf-8'});
+      dlEnc.addEventListener('click', () => {
+        if (!encodedEl.value) return;
+        const blob = new Blob([encodedEl.value], { type: 'text/plain;charset=utf-8' });
         const url = URL.createObjectURL(blob);
-        const a = document.createElement('a'); a.href = url; a.download = 'encoded.txt'; document.body.appendChild(a); a.click(); a.remove();
+        const a = document.createElement('a'); a.href = url; a.download = 'secret_encoded.txt'; document.body.appendChild(a); a.click(); a.remove();
         URL.revokeObjectURL(url);
+        setStatus('Downloaded encoded blob.');
       });
+
+      decryptBtn.addEventListener('click', async () => {
+        decodedOut.value = '';
+        const enc = encodedIn.value.trim();
+        const p = passIn.value;
+        if (!enc) { setStatus('Paste an encoded string to decode', true); return; }
+        if (!p) { setStatus('Enter the passphrase to decrypt', true); return; }
+        setStatus('Decrypting...', false);
+        try {
+          const decoded = await decryptMessage(enc, p, 200000);
+          decodedOut.value = decoded;
+          setStatus('Decryption success.');
+        } catch (e) {
+          console.error(e);
+          setStatus('Decryption failed: ' + (e.message || e), true);
+        }
+      });
+
+      // clear buttons
+      document.getElementById('clear-message').addEventListener('click', () => { messageEl.value=''; setStatus(''); });
+      document.getElementById('clear-decode').addEventListener('click', () => { encodedIn.value=''; passIn.value=''; decodedOut.value=''; setStatus(''); });
     });
   </script>
 </body>
