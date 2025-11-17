@@ -89,22 +89,24 @@
 
     <div class="controls">
         <select id="method">
-            <option value="github">GitHub (direct commit from browser)</option>
+            <option value="github-server">GitHub (secure server commit) - RECOMMENDED</option>
+            <option value="github">GitHub (direct commit from browser) - DEPRECATED</option>
             <option value="server">Local server (POST /log)</option>
             <option value="fs">Local file (File System Access API)</option>
         </select>
-        <input id="token" type="text" placeholder="GitHub token (store local)" style="width:360px" />
+        <input id="token" type="text" placeholder="Token/Secret for selected method" style="width:360px" />
         <button id="saveToken">Save Token</button>
     </div>
 
     <input id="cmd" placeholder="Type here…" autocomplete="off" autocorrect="off" autocapitalize="off" />
-    <div class="note">Note: GitHub method will commit to pewpi-infinity/i logs/txt.log using the token you provide. Keep token secret.</div>
+    <div class="note">Note: GitHub (secure server) method uses a server-side endpoint to safely commit. Direct browser method is deprecated due to security risks.</div>
 
     <footer>
         Powered by Infinity • Designed by Kris Watson & ChatGPT
     </footer>
 </div>
 
+<script src="static/js/commit-client.js"></script>
 <script>
 const terminal = document.getElementById("terminal");
 const input = document.getElementById("cmd");
@@ -116,16 +118,52 @@ const OWNER = 'pewpi-infinity';
 const REPO = 'i';
 const PATH = 'logs/txt.log';
 
-// Load saved token from localStorage
-tokenInput.value = localStorage.getItem('GH_LOG_TOKEN') || '';
+// Load saved token/secret from localStorage based on method
+function loadTokenForMethod() {
+    const method = methodSelect.value;
+    if (method === 'github-server') {
+        tokenInput.value = localStorage.getItem('COMMIT_SECRET') || '';
+        tokenInput.placeholder = 'Commit secret (from server .env)';
+    } else if (method === 'github') {
+        tokenInput.value = localStorage.getItem('GH_LOG_TOKEN') || '';
+        tokenInput.placeholder = 'GitHub token (deprecated)';
+    } else {
+        tokenInput.value = '';
+        tokenInput.placeholder = 'Token/Secret for selected method';
+    }
+}
+
+loadTokenForMethod();
+
+// Update token placeholder when method changes
+methodSelect.addEventListener('change', loadTokenForMethod);
 
 saveTokenBtn.addEventListener('click', () => {
     const t = tokenInput.value.trim();
+    const method = methodSelect.value;
+    
     if (t) {
-        localStorage.setItem('GH_LOG_TOKEN', t);
-        printToTerminal('✔ token saved to localStorage');
+        if (method === 'github-server') {
+            localStorage.setItem('COMMIT_SECRET', t);
+            if (window.CommitClient) {
+                CommitClient.setSecret(t);
+            }
+            printToTerminal('✔ commit secret saved to localStorage');
+        } else if (method === 'github') {
+            localStorage.setItem('GH_LOG_TOKEN', t);
+            printToTerminal('✔ GitHub token saved to localStorage');
+        } else {
+            printToTerminal('⚠ No token storage for this method');
+        }
     } else {
-        localStorage.removeItem('GH_LOG_TOKEN');
+        if (method === 'github-server') {
+            localStorage.removeItem('COMMIT_SECRET');
+            if (window.CommitClient) {
+                CommitClient.clearSecret();
+            }
+        } else {
+            localStorage.removeItem('GH_LOG_TOKEN');
+        }
         printToTerminal('⚠ token cleared');
     }
 });
@@ -151,6 +189,40 @@ async function sendToServer(text) {
         else printToTerminal('✘ server error');
     } catch (err) {
         printToTerminal('✘ backend offline: ' + err.message);
+    }
+}
+
+// GitHub secure server commit method (RECOMMENDED)
+async function sendToGitHubServer(text) {
+    if (!window.CommitClient) {
+        printToTerminal('✘ CommitClient not loaded. Check static/js/commit-client.js');
+        return;
+    }
+
+    const secret = localStorage.getItem('COMMIT_SECRET') || tokenInput.value.trim();
+    if (!secret) {
+        printToTerminal('✘ No commit secret set. Enter it and Save Token.');
+        return;
+    }
+
+    try {
+        // Check server health first
+        const healthy = await CommitClient.checkHealth();
+        if (!healthy) {
+            printToTerminal('⚠ Server may be offline. Attempting commit anyway...');
+        }
+
+        // Commit the text
+        const result = await CommitClient.commit(text);
+        printToTerminal('✔ logged to GitHub via secure server');
+        printToTerminal(`  Commit: ${result.commit.sha.substring(0, 7)}`);
+    } catch (err) {
+        printToTerminal('✘ Server commit error: ' + err.message);
+        if (err.message.includes('secret')) {
+            printToTerminal('  Hint: Check that COMMIT_SECRET matches server .env');
+        } else if (err.message.includes('timed out')) {
+            printToTerminal('  Hint: Is the server running? (node server/commit-server.js)');
+        }
     }
 }
 
@@ -245,7 +317,8 @@ input.addEventListener('keydown', function (e) {
         printToTerminal('∞ > ' + text);
 
         const method = methodSelect.value;
-        if (method === 'server') sendToServer(text);
+        if (method === 'github-server') sendToGitHubServer(text);
+        else if (method === 'server') sendToServer(text);
         else if (method === 'fs') sendToFS(text);
         else if (method === 'github') sendToGitHub(text);
 
