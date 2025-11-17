@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Octave OS — Infinity Terminal (Logger)</title>
   <style>
-    /* color scheme like the original: dark teal terminal + light page */
+    /* colour scheme like the original: dark teal terminal + light page */
     body { font-family: system-ui, -apple-system, Roboto, "Helvetica Neue", Arial; background:#e9f1f5; color:#08303b; padding:20px; }
     .terminal { background:#0b3b4a; color:#7be6ff; padding:18px; border-radius:10px; max-width:820px; margin: 0 auto 18px; font-family: monospace; }
     .card { background:#ffffff; max-width:820px; margin: 0 auto; padding:18px; border-radius:10px; box-shadow: 0 6px 18px rgba(8,48,59,0.06); }
@@ -16,25 +16,31 @@
     button { padding:8px 12px; border-radius:6px; border:1px solid #bfcfd3; background:#f6f8f9; cursor:pointer; }
     #status { display:block; margin-top:12px; min-height:20px; color:#b00020; font-weight:600; }
     .small { font-size:13px; color:#667a80; margin-top:10px; }
-    input.secret { padding:8px; border-radius:6px; border:1px solid #d6e2e6; width:300px; }
-    @media (max-width:560px){ .terminal,.card{padding:12px} input.secret{width:100%} }
+    input.encoded { padding:8px; border-radius:6px; border:1px solid #d6e2e6; width:100%; box-sizing:border-box; }
+    @media (max-width:560px){ .terminal,.card{padding:12px} input.encoded{width:100%} }
   </style>
 </head>
 <body>
   <div class="terminal">
-    Octave OS v0.12 — Frontend-only logger ready.
+    Octave OS v0.12 — Frontend logger ready.
     <div style="margin-top:8px; color:#baf2ff;">Choose a logging method and press Enter.</div>
   </div>
 
   <div class="card">
     <h1>Frontend logger</h1>
+
     <label for="log-input">Type conversation text to record:</label>
     <textarea id="log-input" placeholder="Type message to append to logs/txt.log..."></textarea>
 
     <div style="margin-top:10px;">
-      <label for="secret-input" style="font-size:13px; font-weight:600;">Commit secret (paste here, not stored):</label>
-      <input id="secret-input" class="secret" type="password" placeholder="Paste COMMIT_SECRET here for this session">
-      <div class="small">The COMMIT_SECRET is the small shared secret for the local commit server. Do NOT put your PAT in this box.</div>
+      <label for="encoded-token" style="font-size:13px; font-weight:600;">Encoded GitHub token (paste only an already‑encoded token)</label>
+      <input id="encoded-token" class="encoded" type="text" placeholder="Paste encoded token here (BASE64) — do NOT paste raw PAT" />
+      <div class="small">Important: Do NOT paste your raw GitHub PAT here. Generate an encoded token locally (use the encoder script) and paste the encoded value. This page will not encode secrets for you.</div>
+    </div>
+
+    <div style="margin-top:10px;">
+      <label for="secret-input" style="font-size:13px; font-weight:600;">Commit secret (paste only for this session)</label>
+      <input id="secret-input" class="encoded" type="password" placeholder="Paste COMMIT_SECRET for this session" />
     </div>
 
     <div class="controls">
@@ -43,19 +49,24 @@
       <span id="status" aria-live="polite"></span>
     </div>
 
-    <p class="small">Note: This page sends the typed text to your local commit server (server must be running). The PAT must stay on the server only (do not put tokens into this page or commit them).</p>
+    <p class="small">Note: The frontend will POST typed text to your local commit server. The server must be running and must read GITHUB_TOKEN_B64 from server/.env (locally). Do not put raw PATs in this page or commit them to the repo.</p>
   </div>
 
   <script>
-    // Minimal client logic — no PATs here. The user must enter COMMIT_SECRET manually.
-    async function postCommit(text, secret) {
+    // This page never encodes a raw PAT. It expects a base64-encoded token (GITHUB_TOKEN_B64).
+    async function postCommit(text, encodedToken, secret) {
+      // This function will call the local server. Server should be configured to decode GITHUB_TOKEN_B64 from server/.env.
+      // We do NOT send raw tokens here. If you choose to test by sending encoded token to the server,
+      // keep in mind the server must be local and protected; preferred workflow: place encoded token in server/.env.
+      const headers = { 'Content-Type': 'application/json' };
+      if (secret) headers['X-Commit-Secret'] = secret;
+      // NOTE: Sending encoded token over network is optional — preferred: put the encoded token in server/.env.
+      if (encodedToken) headers['X-GITHUB-TOKEN-B64'] = encodedToken;
+
       const resp = await fetch('/commit', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          // secret is sent as header to the local server; do not store permanently
-          ...(secret ? {'X-Commit-Secret': secret} : {})
-        },
+        headers,
+        credentials: 'same-origin',
         body: JSON.stringify({ text })
       });
       return resp;
@@ -63,6 +74,7 @@
 
     document.addEventListener('DOMContentLoaded', function() {
       const input = document.getElementById('log-input');
+      const encodedInput = document.getElementById('encoded-token');
       const secretInput = document.getElementById('secret-input');
       const sendBtn = document.getElementById('send-btn');
       const clearBtn = document.getElementById('clear-btn');
@@ -76,29 +88,25 @@
       sendBtn.addEventListener('click', async function() {
         setStatus('', false);
         const text = input.value || '';
+        const encoded = encodedInput.value || '';
         const secret = secretInput.value || '';
         if (!text.trim()) { setStatus('Type something to send', true); return; }
         if (!secret.trim()) { setStatus('Paste COMMIT_SECRET (session only) before sending', true); return; }
+
         try {
           setStatus('Sending...', false);
-          const r = await postCommit(text, secret);
+          const r = await postCommit(text, encoded, secret);
           const body = await r.json().catch(()=>({}));
-          if (!r.ok) {
-            setStatus('Error: ' + (body.error || r.status), true);
-            return;
-          }
-          setStatus('Logged — commit: ' + (body.commit||'(unknown)'), false);
+          if (!r.ok) { setStatus('Error: ' + (body.error || r.status), true); return; }
+          setStatus('Logged — commit: ' + (body.commit || '(unknown)'), false);
           input.value = '';
         } catch (err) {
           console.error(err);
-          setStatus('Network error: ' + (err.message||err), true);
+          setStatus('Network error: ' + (err.message || err), true);
         }
       });
 
-      clearBtn.addEventListener('click', function() {
-        input.value = '';
-        setStatus('', false);
-      });
+      clearBtn.addEventListener('click', function() { input.value = ''; setStatus('', false); });
     });
   </script>
 </body>
