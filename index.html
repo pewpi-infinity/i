@@ -509,7 +509,7 @@ window.octave = { loadLogs, saveLogs, encryptText, decryptText, pushQueue, pushT
 <script src="/static/js/embedded-writer.js"></script>
 <script src="/static/js/token-client.js"></script>
 <script src="/static/js/ui-wiring.js"></script>
-
+<script src="helper-octave-extension.js"></script>
 <!-- Small runtime patch: ensure main functions mirror to repo_data if bridge is loaded.
      This does not remove or change your existing work — it only mirrors logs/entries into repo_data
      so the embedded-writer and token systems keep the in-file canonical copy up-to-date. -->
@@ -530,7 +530,6 @@ window.octave = { loadLogs, saveLogs, encryptText, decryptText, pushQueue, pushT
   } catch(e){}
 })();
 </script>
-<script src="helper-octave-extension.js"></script>
 
 </body>
 </html>
