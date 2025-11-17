@@ -3,49 +3,70 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Octave OS - Infinity Terminal</title>
+  <title>Octave OS — Infinity Terminal (Logger)</title>
   <style>
-    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; background:#e9f0f6; color:#0b2a3d; padding:20px; }
-    .terminal { background:#052b3a; color:#7be6ff; padding:18px; border-radius:8px; max-width:760px; margin: 0 auto 20px; font-family: monospace; }
-    .logger { max-width:760px; margin: 0 auto; background:#fff; padding:16px; border-radius:8px; box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
-    textarea { width:100%; height:120px; font-family: inherit; font-size:14px; padding:8px; box-sizing:border-box; }
-    button { padding:8px 12px; font-size:14px; margin-top:8px; }
-    #log-status { display:block; margin-top:8px; color:#333; }
+    /* color scheme like the original: dark teal terminal + light page */
+    body { font-family: system-ui, -apple-system, Roboto, "Helvetica Neue", Arial; background:#e9f1f5; color:#08303b; padding:20px; }
+    .terminal { background:#0b3b4a; color:#7be6ff; padding:18px; border-radius:10px; max-width:820px; margin: 0 auto 18px; font-family: monospace; }
+    .card { background:#ffffff; max-width:820px; margin: 0 auto; padding:18px; border-radius:10px; box-shadow: 0 6px 18px rgba(8,48,59,0.06); }
+    h1 { margin:0 0 8px 0; font-size:20px; color:#08303b; }
+    label { color:#08303b; font-weight:600; display:block; margin-bottom:6px; }
+    textarea { width:100%; height:140px; font-size:14px; padding:10px; box-sizing:border-box; border:1px solid #d6e2e6; border-radius:6px; resize:vertical; }
+    .controls { margin-top:12px; display:flex; gap:8px; align-items:center; }
+    button { padding:8px 12px; border-radius:6px; border:1px solid #bfcfd3; background:#f6f8f9; cursor:pointer; }
+    #status { display:block; margin-top:12px; min-height:20px; color:#b00020; font-weight:600; }
+    .small { font-size:13px; color:#667a80; margin-top:10px; }
+    input.secret { padding:8px; border-radius:6px; border:1px solid #d6e2e6; width:300px; }
+    @media (max-width:560px){ .terminal,.card{padding:12px} input.secret{width:100%} }
   </style>
 </head>
 <body>
   <div class="terminal">
-    <div>Octave OS v0.12 - Frontend-only logger ready.</div>
-    <div style="margin-top:8px; color:#9ee6ff;">Choose a logging method and press Enter.</div>
+    Octave OS v0.12 — Frontend-only logger ready.
+    <div style="margin-top:8px; color:#baf2ff;">Choose a logging method and press Enter.</div>
   </div>
 
-  <div class="logger">
-    <h3>Frontend logger</h3>
+  <div class="card">
+    <h1>Frontend logger</h1>
     <label for="log-input">Type conversation text to record:</label>
     <textarea id="log-input" placeholder="Type message to append to logs/txt.log..."></textarea>
-    <div>
-      <button id="log-send-btn">Send to log</button>
-      <button id="log-clear-btn">Clear</button>
+
+    <div style="margin-top:10px;">
+      <label for="secret-input" style="font-size:13px; font-weight:600;">Commit secret (paste here, not stored):</label>
+      <input id="secret-input" class="secret" type="password" placeholder="Paste COMMIT_SECRET here for this session">
+      <div class="small">The COMMIT_SECRET is the small shared secret for the local commit server. Do NOT put your PAT in this box.</div>
     </div>
-    <span id="log-status"></span>
-    <p style="font-size:12px; color:#666; margin-top:12px;">
-      Note: The frontend will POST typed text to the local commit server which commits to GitHub.
-      Do NOT store GitHub tokens in the browser.
-    </p>
+
+    <div class="controls">
+      <button id="send-btn">Send to log</button>
+      <button id="clear-btn">Clear</button>
+      <span id="status" aria-live="polite"></span>
+    </div>
+
+    <p class="small">Note: This page sends the typed text to your local commit server (server must be running). The PAT must stay on the server only (do not put tokens into this page or commit them).</p>
   </div>
 
-  <!-- Commit client script (served from /static/js/commit-client.js) -->
-  <script src="/static/js/commit-client.js"></script>
   <script>
-    // OPTIONAL: if you want to embed the commit secret into the page (less secure),
-    // set window.COMMIT_SECRET = 'your-secret-here' on the server-rendered page.
-    // window.COMMIT_SECRET = '';
+    // Minimal client logic — no PATs here. The user must enter COMMIT_SECRET manually.
+    async function postCommit(text, secret) {
+      const resp = await fetch('/commit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          // secret is sent as header to the local server; do not store permanently
+          ...(secret ? {'X-Commit-Secret': secret} : {})
+        },
+        body: JSON.stringify({ text })
+      });
+      return resp;
+    }
 
     document.addEventListener('DOMContentLoaded', function() {
       const input = document.getElementById('log-input');
-      const sendBtn = document.getElementById('log-send-btn');
-      const clearBtn = document.getElementById('log-clear-btn');
-      const status = document.getElementById('log-status');
+      const secretInput = document.getElementById('secret-input');
+      const sendBtn = document.getElementById('send-btn');
+      const clearBtn = document.getElementById('clear-btn');
+      const status = document.getElementById('status');
 
       function setStatus(msg, isError) {
         status.textContent = msg;
@@ -53,15 +74,24 @@
       }
 
       sendBtn.addEventListener('click', async function() {
-        const text = input.value;
-        if (!text || !text.trim()) { setStatus('Type something to send', true); return; }
-        setStatus('Sending...', false);
+        setStatus('', false);
+        const text = input.value || '';
+        const secret = secretInput.value || '';
+        if (!text.trim()) { setStatus('Type something to send', true); return; }
+        if (!secret.trim()) { setStatus('Paste COMMIT_SECRET (session only) before sending', true); return; }
         try {
-          const result = await window.CommitClient.send(text);
-          setStatus('Logged — commit: ' + (result.commit || '(unknown)'), false);
+          setStatus('Sending...', false);
+          const r = await postCommit(text, secret);
+          const body = await r.json().catch(()=>({}));
+          if (!r.ok) {
+            setStatus('Error: ' + (body.error || r.status), true);
+            return;
+          }
+          setStatus('Logged — commit: ' + (body.commit||'(unknown)'), false);
+          input.value = '';
         } catch (err) {
-          console.error('Commit error', err);
-          setStatus('Error: ' + (err.message || 'unknown'), true);
+          console.error(err);
+          setStatus('Network error: ' + (err.message||err), true);
         }
       });
 
