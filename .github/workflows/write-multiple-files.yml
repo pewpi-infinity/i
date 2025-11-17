@@ -1,0 +1,85 @@
+name: write-multiple-files
+
+on:
+  workflow_dispatch:
+    inputs:
+      archive_b64:
+        description: 'Base64-encoded archive containing one or more files (required). Single-line, no newlines.'
+        required: true
+      archive_type:
+        description: 'Type of archive: tar.gz (or tgz) or zip'
+        required: true
+        default: 'tar.gz'
+      commit_message:
+        description: 'Commit message to use'
+        required: false
+        default: 'Automated multi-file write via workflow'
+      branch:
+        description: 'Branch to commit to'
+        required: false
+        default: 'auto/commit-integration'
+
+jobs:
+  write-files:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout target branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch }}
+          persist-credentials: true
+
+      - name: Prepare temp dir
+        run: |
+          set -euo pipefail
+          TMPDIR=$(mktemp -d)
+          echo "$TMPDIR" > /tmp/_wf_tmpdir
+
+      - name: Decode and extract archive
+        env:
+          ARCHIVE_B64: ${{ github.event.inputs.archive_b64 }}
+          ARCHIVE_TYPE: ${{ github.event.inputs.archive_type }}
+        run: |
+          set -euo pipefail
+          TMPDIR=$(cat /tmp/_wf_tmpdir)
+
+          if [ -z "${ARCHIVE_B64:-}" ]; then
+            echo "archive_b64 input is empty" >&2
+            exit 1
+          fi
+
+          # Decode base64 to a temporary file
+          echo "$ARCHIVE_B64" | base64 --decode > "$TMPDIR/archive" || ( echo "base64 decode failed"; exit 1 )
+
+          if [ "$ARCHIVE_TYPE" = "tar.gz" ] || [ "$ARCHIVE_TYPE" = "tgz" ]; then
+            mv "$TMPDIR/archive" "$TMPDIR/archive.tar.gz"
+            tar -xzf "$TMPDIR/archive.tar.gz" -C "$TMPDIR"
+          elif [ "$ARCHIVE_TYPE" = "zip" ]; then
+            mv "$TMPDIR/archive" "$TMPDIR/archive.zip"
+            unzip -q "$TMPDIR/archive.zip" -d "$TMPDIR"
+          else
+            echo "Unsupported archive_type: $ARCHIVE_TYPE" >&2
+            exit 1
+          fi
+
+      - name: Copy extracted files into repo (preserve paths)
+        run: |
+          set -euo pipefail
+          TMPDIR=$(cat /tmp/_wf_tmpdir)
+          # Use rsync to copy everything except .git
+          rsync -av --exclude='.git' "$TMPDIR"/ ./ 
+          echo "Copied files from archive into repo working tree."
+
+      - name: Show changed files
+        run: |
+          git status --porcelain || true
+          git --no-pager diff --name-only || true
+
+      - name: Commit & push
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "${{ github.event.inputs.commit_message }}" || echo "No changes to commit"
+          git push origin "${{ github.event.inputs.branch }}"
