@@ -1,0 +1,14 @@
+# Environment variables (contains secrets)
+server/.env
+
+# Node modules
+node_modules/
+server/node_modules/
+
+# Build artifacts
+dist/
+build/
+
+# Temporary files
+*.tmp
+*.log~
