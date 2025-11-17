@@ -3,23 +3,27 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Octave OS — Octave Logger & Pewpi Secret Encoder</title>
+  <title>Octave OS — Octave Logger & Pewpi Secret Encoder (POS color)</title>
   <style>
-    /* preserved look & feel; restored the original cool blue text color for the terminal */
     :root{
       --page-bg: #e9f1f5;
-      --terminal-bg: #0b3b4a; /* dark teal terminal background */
-      --terminal-text-blue: #7be6ff; /* the "cool" blue cyan used for terminal text */
-      --card-bg: #ffffff;
-      --muted: #667a80;
-      --accent-dark: #08303b;
+      --terminal-bg: #0b3b4a;               /* dark teal terminal background */
+      --terminal-text-blue: #7be6ff;        /* cool cyan used in terminal help */
+      --noun-blue: #7be6ff;                 /* nouns — same cool cyan */
+      --verb-blue: #4fb8e0;                 /* verbs — slightly deeper cyan */
+      --adj-blue: #9fefff;                  /* adjectives — light cyan */
+      --adv-blue: #6fd7ff;                  /* adverbs — medium cyan */
+      --other-blue: #3aa4c2;                /* other tokens */
       --panel-bg: #f8fbfc;
       --panel-border: #e6eef0;
+      --card-bg: #ffffff;
+      --accent-dark: #08303b;
+      --muted: #667a80;
     }
 
     body { font-family: system-ui, -apple-system, Roboto, "Helvetica Neue", Arial; background:var(--page-bg); color:var(--accent-dark); padding:20px; }
-    .terminal { background:var(--terminal-bg); color:var(--terminal-text-blue); padding:18px; border-radius:10px; max-width:920px; margin: 0 auto 18px; font-family: monospace; }
-    .card { background:var(--card-bg); max-width:920px; margin: 0 auto; padding:18px; border-radius:10px; box-shadow: 0 6px 18px rgba(8,48,59,0.06); }
+    .terminal { background:var(--terminal-bg); color:var(--terminal-text-blue); padding:18px; border-radius:10px; max-width:920px; margin:0 auto 18px; font-family: monospace; }
+    .card { background:var(--card-bg); max-width:920px; margin:0 auto; padding:18px; border-radius:10px; box-shadow: 0 6px 18px rgba(8,48,59,0.06); }
     h1 { margin:0 0 8px 0; font-size:20px; color:var(--accent-dark); }
     label { color:var(--accent-dark); font-weight:600; display:block; margin-bottom:6px; }
     textarea, input[type="text"] { width:100%; font-size:14px; padding:10px; box-sizing:border-box; border:1px solid #d6e2e6; border-radius:6px; }
@@ -33,9 +37,22 @@
     #status { display:block; margin-top:12px; min-height:20px; color:#b00020; font-weight:600; }
     .outputs { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:14px; }
     @media (max-width:760px){ .outputs { grid-template-columns:1fr } }
-    .panel { background:var(--panel-bg); border-radius:6px; padding:10px; min-height:140px; border:1px solid var(--panel-border); white-space:pre-wrap; overflow:auto; }
+    .panel { background:var(--panel-bg); border-radius:6px; padding:10px; min-height:140px; border:1px solid var(--panel-border); white-space:pre-wrap; overflow:auto; color:var(--terminal-text-blue); }
     .muted { color:var(--muted); font-size:13px; }
     .toggle { display:inline-flex; gap:6px; align-items:center; padding:6px; background:#eef6f8; border-radius:6px; border:1px solid #d6e2e6; }
+
+    /* POS token classes (shades of blue) */
+    .pos-noun { color: var(--noun-blue); font-weight:600; }
+    .pos-verb { color: var(--verb-blue); font-weight:600; }
+    .pos-adj  { color: var(--adj-blue); }
+    .pos-adv  { color: var(--adv-blue); }
+    .pos-num  { color: var(--other-blue); font-weight:600; }
+    .pos-prop { color: var(--noun-blue); font-weight:700; } /* proper nouns */
+    .pos-other { color: var(--other-blue); }
+
+    /* small visual niceties */
+    .token { padding:0 0.1rem; border-radius:2px; }
+    .controls .notice { font-size:13px; color:var(--muted); margin-left:8px; }
   </style>
 </head>
 <body>
@@ -57,22 +74,19 @@
       <button id="submit-btn">Submit</button>
       <button id="auto-encode" title="When checked, AI conversation outputs will be auto-encoded into the encoded panel">Auto-encode AI output</button>
       <button id="clear-input">Clear</button>
-      <span id="status" aria-live="polite"></span>
+      <label class="controls notice"><input id="pos-toggle" type="checkbox" checked> POS color (nouns/verbs/adjs/adv)</label>
     </div>
 
-    <div class="label-small">Notes:
-      - Conversation mode: sends the input to a local /ai endpoint (if available) to retrieve AI responses. If no server is available a local demo AI will respond.
-      - Encode mode: encrypts the input into a single encoded blob. The passphrase is required to decode.
-    </div>
+    <div class="label-small">Notes: - Conversation mode: sends the input to a local /ai endpoint (if available) to retrieve AI responses. - Encode mode: encrypts the input into a single encoded blob. The passphrase is required to decode.</div>
 
     <div class="outputs">
       <div>
-        <h2 style="margin:8px 0 6px 0">AI Conversation Output</h2>
+        <h2 style="margin:8px 0 6px 0; color:var(--terminal-text-blue)">AI Conversation Output</h2>
         <div id="ai-output" class="panel" aria-live="polite"></div>
       </div>
 
       <div>
-        <h2 style="margin:8px 0 6px 0">Encoded / Decoded Output</h2>
+        <h2 style="margin:8px 0 6px 0; color:var(--terminal-text-blue)">Encoded / Decoded Output</h2>
         <div id="encoded-output" class="panel" readonly></div>
       </div>
     </div>
@@ -103,11 +117,116 @@
         To share a secret: give recipient the encoded blob (from Encoded Output) + the passphrase. They can paste both into this page to retrieve the decoded message.
       </div>
     </div>
-
   </div>
 
   <script>
-    // --- Crypto helpers (PBKDF2 -> AES-GCM) ---
+    // === POS tagging heuristics & coloring logic ===
+    // Lightweight, client-side heuristic tagger for basic POS categories.
+    // Not a full NLP model — uses small lists + suffix rules. Good enough for coloring nouns, verbs, adjectives, adverbs, numbers, proper nouns.
+    const VERBS = new Set(['be','is','are','was','were','am','have','has','had','do','does','did','say','says','said','get','got','make','made','go','went','know','knew','take','took','see','saw','come','came','think','thought','look','looked','want','wanted','give','gave','use','used','find','found','tell','told','ask','asked','work','worked','seem','seemed','feel','felt','try','tried','leave','left','call','called','append','append']);
+    const NOUNS = new Set(['time','person','year','way','day','thing','man','world','life','hand','part','child','eye','woman','place','work','week','case','point','government','company','number','group','problem','fact','message','context','conversation','ai','octave','log','entry']);
+    const ADJS = new Set(['good','new','first','last','long','great','little','own','other','old','right','big','high','different','small','large','next','early','young','important','few','public','bad','same','able']);
+    const PRONOUNS = new Set(['i','you','he','she','it','we','they','me','him','her','us','them','this','that','these','those']);
+    const NUM_RE = /^\d+([.,]\d+)?$/;
+
+    // escape HTML for safe injection
+    function escapeHtml(str){
+      return str.replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
+    }
+
+    // basic tokenizer: words, whitespace, punctuation
+    function tokenize(text) {
+      // keep whitespace tokens so we can rebuild with original spacing
+      const re = /(\w+|\s+|[^\s\w]+)/g;
+      return text.match(re) || [];
+    }
+
+    function guessPos(token) {
+      const t = token.trim();
+      if (!t) return 'space';
+      // numbers
+      if (NUM_RE.test(t)) return 'num';
+      // punctuation
+      if (/^[^\w]+$/.test(t)) return 'other';
+      const lower = t.toLowerCase();
+      // pronoun
+      if (PRONOUNS.has(lower)) return 'noun';
+      // direct lists
+      if (VERBS.has(lower)) return 'verb';
+      if (NOUNS.has(lower)) return 'noun';
+      if (ADJS.has(lower)) return 'adj';
+      // morphological heuristics
+      if (/[A-Z][a-z]+/.test(t) && t.length > 1) return 'prop';         // proper noun (capitalized)
+      if (lower.endsWith('ing') || lower.endsWith('ed') || lower.endsWith('ize') || lower.endsWith('ise')) return 'verb';
+      if (lower.endsWith('ly')) return 'adv';
+      if (lower.endsWith('ion') || lower.endsWith('ment') || lower.endsWith('ness') || lower.endsWith('ity')) return 'noun';
+      if (lower.endsWith('able') || lower.endsWith('ible') || lower.endsWith('ous') || lower.endsWith('ful') || lower.endsWith('ive')) return 'adj';
+      // fallback heuristics: short words often articles/prepositions -> other
+      if (lower.length <= 3) return 'other';
+      // default to noun (most content words are nouns)
+      return 'noun';
+    }
+
+    function posColorizeText(text) {
+      const tokens = tokenize(text);
+      const html = tokens.map(tok => {
+        if (/^\s+$/.test(tok)) return escapeHtml(tok);
+        const pos = guessPos(tok);
+        let cls = '';
+        switch(pos) {
+          case 'noun': cls = 'pos-noun'; break;
+          case 'verb': cls = 'pos-verb'; break;
+          case 'adj': cls = 'pos-adj'; break;
+          case 'adv': cls = 'pos-adv'; break;
+          case 'num': cls = 'pos-num'; break;
+          case 'prop': cls = 'pos-prop'; break;
+          default: cls = 'pos-other'; break;
+        }
+        return `<span class="token ${cls}">${escapeHtml(tok)}</span>`;
+      }).join('');
+      return html;
+    }
+
+    // Apply POS coloring to a given element's text content.
+    function applyPosColoring(el) {
+      const enabled = document.getElementById('pos-toggle').checked;
+      if (!enabled) {
+        el.innerText = el.textContent; // reset to plain text (preserve)
+        return;
+      }
+      const text = el.textContent || '';
+      el.innerHTML = posColorizeText(text);
+    }
+
+    // Apply coloring to multiple panels
+    function colorizeAllPanels() {
+      const panels = document.querySelectorAll('.panel');
+      panels.forEach(p => applyPosColoring(p));
+    }
+
+    // Observe changes on panels and re-color them when content changes
+    const observer = new MutationObserver((mutationsList) => {
+      for (const m of mutationsList) {
+        if (m.type === 'childList' || m.type === 'characterData') {
+          // Reapply coloring on the target panel
+          const panel = m.target.nodeType === Node.TEXT_NODE ? m.target.parentElement : m.target;
+          if (panel && panel.classList && panel.classList.contains('panel')) {
+            applyPosColoring(panel);
+          }
+        }
+      }
+    });
+
+    function observePanels() {
+      const panels = document.querySelectorAll('.panel');
+      panels.forEach(p => {
+        observer.observe(p, { childList: true, subtree: true, characterData: true });
+      });
+    }
+
+    // === Existing page logic (encryption / ai / encode flows) ===
+    // Using previously implemented PBKDF2 -> AES-GCM functions (kept minimal and same API)
+
     function toBase64(bytes) {
       let s = '';
       for (let i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
@@ -129,7 +248,7 @@
         baseKey,
         { name: 'AES-GCM', length: 256 },
         true,
-        ['encrypt', 'decrypt']
+        ['encrypt','decrypt']
       );
       return key;
     }
@@ -159,7 +278,7 @@
       return new TextDecoder().decode(plainBuffer);
     }
 
-    // --- UI wiring & behavior ---
+    // --- Page behaviors (UI wiring) ---
     document.addEventListener('DOMContentLoaded', () => {
       const inputBox = document.getElementById('input-box');
       const modeToggle = document.getElementById('mode-toggle');
@@ -173,6 +292,11 @@
       const copyEncodedBtn = document.getElementById('copy-encoded');
       const autoEncodeBtn = document.getElementById('auto-encode');
       const clearInputBtn = document.getElementById('clear-input');
+      const posToggle = document.getElementById('pos-toggle');
+
+      // initialize observers and coloring
+      observePanels();
+      colorizeAllPanels();
 
       let autoEncode = false;
       autoEncodeBtn.addEventListener('click', () => {
@@ -186,7 +310,6 @@
         status.style.color = isError ? '#b00020' : '#0a6f2b';
       }
 
-      // small passphrase generator (base64url-like)
       function genPassphrase(lenBytes = 16) {
         const arr = crypto.getRandomValues(new Uint8Array(lenBytes));
         return toBase64(arr).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
@@ -196,9 +319,8 @@
         setStatus('Passphrase generated. Keep it private.');
       });
 
-      // simulate local AI response if no server exists
       async function simulateAiResponse(prompt) {
-        await new Promise(r => setTimeout(r, 300));
+        await new Promise(r => setTimeout(r, 200));
         const lines = [
           "Octave OS analysis:",
           `"${prompt.slice(0,200)}"`,
@@ -226,8 +348,12 @@
         if (modeToggle.checked) {
           setStatus('Getting AI response...', false);
           const aiText = await fetchAiResponse(text);
+          // append raw text first (so observers detect text changes)
           aiOutput.textContent = (aiOutput.textContent ? aiOutput.textContent + "\n\n" : "") + "USER: " + text + "\n\nAI: " + aiText;
           setStatus('AI response appended.');
+          // apply coloring after content appended
+          applyPosColoring(aiOutput);
+
           if (autoEncode) {
             let pass = passphraseEl.value;
             if (!pass) {
@@ -238,12 +364,14 @@
             try {
               const encoded = await encryptMessage(aiText, pass, 200000);
               encodedOutput.textContent = encodedOutput.textContent ? encodedOutput.textContent + "\n\n" + encoded : encoded;
+              applyPosColoring(encodedOutput);
               setStatus('AI response encrypted and appended to Encoded Output.');
             } catch (e) {
               setStatus('Encoding failed: ' + e.message, true);
             }
           }
         } else {
+          // Encode mode
           let pass = passphraseEl.value;
           if (!pass) {
             pass = genPassphrase(16);
@@ -255,8 +383,11 @@
           try {
             const encoded = await encryptMessage(text, pass, 200000);
             encodedOutput.textContent = encodedOutput.textContent ? encodedOutput.textContent + "\n\n" + encoded : encoded;
-            setStatus('Message encrypted. Share encoded blob + passphrase to recipient.');
+            // show an encoded-note in ai output for ingestion
             aiOutput.textContent = (aiOutput.textContent ? aiOutput.textContent + "\n\n" : "") + "ENCODED_MESSAGE_CREATED_AT: " + new Date().toISOString();
+            applyPosColoring(aiOutput);
+            applyPosColoring(encodedOutput);
+            setStatus('Message encrypted. Share encoded blob + passphrase to recipient.');
           } catch (e) {
             setStatus('Encryption failed: ' + e.message, true);
           }
@@ -276,6 +407,7 @@
           setStatus('Decrypting...', false);
           const decoded = await decryptMessage(last, pass, 200000);
           aiOutput.textContent = (aiOutput.textContent ? aiOutput.textContent + "\n\n" : "") + "RETRIEVED: " + decoded;
+          applyPosColoring(aiOutput);
           setStatus('Retrieved and appended to AI Conversation Output.');
         } catch (e) {
           setStatus('Decryption failed: ' + (e.message || e), true);
@@ -283,18 +415,4 @@
       });
 
       copyEncodedBtn.addEventListener('click', async () => {
-        const enc = encodedOutput.textContent || '';
-        if (!enc.trim()) { setStatus('No encoded text to copy', true); return; }
-        try {
-          await navigator.clipboard.writeText(enc);
-          setStatus('Encoded text copied to clipboard.');
-        } catch (e) {
-          setStatus('Copy failed: ' + e.message, true);
-        }
-      });
-
-      clearInputBtn.addEventListener('click', () => { inputBox.value=''; setStatus(''); });
-    });
-  </script>
-</body>
-</html>
+        const enc = encodedOutput.textContent 
