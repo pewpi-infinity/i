@@ -9,11 +9,13 @@
 
 import * as Hub from './hub.js';
 
-// Terminal state
-let commandHistory = [];
-let historyIndex = -1;
-let currentInput = '';
-let isProcessing = false;
+// Terminal state (use const for array to avoid redeclaration issues)
+const terminalState = {
+  history: [],
+  historyIndex: -1,
+  currentInput: '',
+  isProcessing: false
+};
 
 // DOM elements (will be initialized on load)
 let terminalOutput = null;
@@ -69,7 +71,7 @@ function setupEventListeners() {
  * Handle keyboard input
  */
 function handleKeyDown(event) {
-  if (isProcessing) {
+  if (terminalState.isProcessing) {
     event.preventDefault();
     return;
   }
@@ -101,24 +103,24 @@ function handleKeyDown(event) {
  * Navigate command history
  */
 function navigateHistory(direction) {
-  if (commandHistory.length === 0) return;
+  if (terminalState.history.length === 0) return;
 
-  if (historyIndex === -1) {
-    currentInput = terminalInput.value;
+  if (terminalState.historyIndex === -1) {
+    terminalState.currentInput = terminalInput.value;
   }
 
   if (direction === 'up') {
-    if (historyIndex < commandHistory.length - 1) {
-      historyIndex++;
-      terminalInput.value = commandHistory[commandHistory.length - 1 - historyIndex];
+    if (terminalState.historyIndex < terminalState.history.length - 1) {
+      terminalState.historyIndex++;
+      terminalInput.value = terminalState.history[terminalState.history.length - 1 - terminalState.historyIndex];
     }
   } else if (direction === 'down') {
-    if (historyIndex > 0) {
-      historyIndex--;
-      terminalInput.value = commandHistory[commandHistory.length - 1 - historyIndex];
-    } else if (historyIndex === 0) {
-      historyIndex = -1;
-      terminalInput.value = currentInput;
+    if (terminalState.historyIndex > 0) {
+      terminalState.historyIndex--;
+      terminalInput.value = terminalState.history[terminalState.history.length - 1 - terminalState.historyIndex];
+    } else if (terminalState.historyIndex === 0) {
+      terminalState.historyIndex = -1;
+      terminalInput.value = terminalState.currentInput;
     }
   }
 
@@ -151,16 +153,16 @@ async function handleCommand() {
   if (!input) return;
 
   // Add to history
-  commandHistory.push(input);
-  historyIndex = -1;
-  currentInput = '';
+  terminalState.history.push(input);
+  terminalState.historyIndex = -1;
+  terminalState.currentInput = '';
 
   // Display command
   appendOutput(`> ${input}`, 'command');
 
   // Clear input
   terminalInput.value = '';
-  isProcessing = true;
+  terminalState.isProcessing = true;
 
   // Parse and execute command
   const parts = input.split(/\s+/);
@@ -173,7 +175,7 @@ async function handleCommand() {
     appendOutput(`Error: ${error.message}`, 'error');
   }
 
-  isProcessing = false;
+  terminalState.isProcessing = false;
   terminalInput.focus();
 }
 
@@ -211,7 +213,7 @@ async function executeCommand(command, args) {
       break;
 
     case 'history':
-      commandHistory();
+      showCommandHistory();
       break;
 
     case 'queue':
@@ -398,14 +400,14 @@ function commandExit() {
 /**
  * Show command history
  */
-function commandHistory() {
-  if (commandHistory.length === 0) {
+function showCommandHistory() {
+  if (terminalState.history.length === 0) {
     appendOutput('No command history', 'response');
     return;
   }
 
   appendOutput('\nCommand History:', 'system');
-  commandHistory.forEach((cmd, index) => {
+  terminalState.history.forEach((cmd, index) => {
     appendOutput(`${index + 1}. ${cmd}`, 'response');
   });
 }
@@ -518,7 +520,7 @@ if (typeof window !== 'undefined') {
   window.Terminal = {
     initialize,
     executeCommand,
-    commandHistory,
-    clearHistory: () => { commandHistory = []; }
+    getHistory: () => terminalState.history,
+    clearHistory: () => { terminalState.history = []; }
   };
 }
