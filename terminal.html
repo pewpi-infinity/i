@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>∞ Terminal - Integration Hub</title>
+  <link rel="stylesheet" href="css/terminal.css">
+</head>
+<body>
+  <!-- Navigation back to main interface -->
+  <a href="index.html" class="nav-button" aria-label="Return to main interface">
+    ← Back to Main
+  </a>
+
+  <div class="terminal-container">
+    <!-- Terminal Header -->
+    <header class="terminal-header" role="banner">
+      <div class="terminal-title">
+        <span class="glow">∞ INFINITY TERMINAL</span>
+      </div>
+      <div class="terminal-status" role="status" aria-live="polite">
+        <div class="status-indicator" id="status-z">
+          <span class="status-dot disconnected" aria-hidden="true"></span>
+          <span>z</span>
+        </div>
+        <div class="status-indicator" id="status-mongoose">
+          <span class="status-dot disconnected" aria-hidden="true"></span>
+          <span>mongoose</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Terminal Output Area -->
+    <main class="terminal-output" 
+          id="terminal-output" 
+          role="log" 
+          aria-live="polite" 
+          aria-label="Terminal output">
+      <!-- Output will be dynamically added here -->
+    </main>
+
+    <!-- Terminal Input Area -->
+    <footer class="terminal-input-container">
+      <label for="terminal-input" class="sr-only">Terminal command input</label>
+      <span class="input-prompt" aria-hidden="true">∞&gt;</span>
+      <input 
+        type="text" 
+        id="terminal-input" 
+        class="terminal-input" 
+        placeholder="Type 'help' for commands..."
+        autocomplete="off"
+        autocorrect="off"
+        autocapitalize="off"
+        spellcheck="false"
+        aria-label="Command input"
+        aria-describedby="command-help">
+    </footer>
+  </div>
+
+  <!-- Accessibility help text -->
+  <div id="command-help" class="sr-only">
+    Terminal command interface. Use arrow up and down keys to navigate command history. 
+    Press tab for autocomplete. Type help and press enter for list of available commands.
+  </div>
+
+  <!-- Load terminal scripts as ES6 modules -->
+  <script type="module" src="js/terminal.js"></script>
+</body>
+</html>
