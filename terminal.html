@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🧱 Pewpi Terminal - ∞ i</title>
+  <link rel="stylesheet" href="css/terminal.css">
+</head>
+<body>
+  <!-- Pewpi Sign-in Gate (same as index.html) -->
+  <div id="pewpi-gate">
+    <h1>🐶 pewpi</h1>
+    <input id="pewpi_user" placeholder="Handle">
+    <button onclick="pewpiUnlock()">Enter</button>
+  </div>
+  <script>
+  function pewpiUnlock(){
+    localStorage.setItem("pewpi_user", document.getElementById("pewpi_user").value);
+    document.getElementById("pewpi-gate").style.display="none";
+    document.body.classList.add("pewpi-live");
+  }
+  if(localStorage.getItem("pewpi_user")){
+    document.addEventListener("DOMContentLoaded",()=>{
+      const g=document.getElementById("pewpi-gate");
+      if(g) g.style.display="none";
+      document.body.classList.add("pewpi-live");
+    });
+  }
+  </script>
+  <style>
+  #pewpi-gate{position:fixed;inset:0;background:#0e0e0e;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999}
+  #pewpi-gate h1{margin-bottom:20px;font-size:32px;}
+  #pewpi-gate input{padding:10px;font-size:16px;margin-bottom:10px;border:1px solid #333;background:#222;color:#fff;border-radius:6px;}
+  #pewpi-gate button{background:#ff69b4;border:0;padding:10px 18px;color:#fff;font-size:16px;border-radius:6px;cursor:pointer;}
+  body:not(.pewpi-live)>*:not(#pewpi-gate){filter:blur(6px);pointer-events:none}
+  </style>
+
+  <!-- Embedded repo_data for storage integration -->
+  <script id="repo_data" type="application/json">
+{
+  "meta": {
+    "created_by": "terminal_interface",
+    "created_at": "2025-12-31T21:00:00Z",
+    "current_user": "",
+    "commit_chain": ""
+  },
+  "wallets": {},
+  "tokens": {},
+  "entries": [],
+  "commits": []
+}
+  </script>
+
+  <div class="container">
+    <div class="header">
+      <h1>🧱 Pewpi Terminal - Octave OS</h1>
+      <button class="back-btn" onclick="location.href='index.html'">← Back to Index</button>
+    </div>
+
+    <div class="terminal-window">
+      <div class="terminal-header">
+        <div>
+          <span style="color: var(--color-verb);">●</span>
+          <span style="color: var(--color-adv);">●</span>
+          <span style="color: var(--color-other);">●</span>
+          <span style="margin-left: 12px;">pewpi@octave:~$</span>
+        </div>
+        <div id="connection-status">
+          <span style="color: var(--color-verb);">● Connected</span>
+        </div>
+      </div>
+
+      <div class="terminal-output" id="terminal-output">
+        <div class="terminal-line">
+          <span class="terminal-info">╔══════════════════════════════════════════════════════════════╗</span>
+        </div>
+        <div class="terminal-line">
+          <span class="terminal-info">║  🧱 Pewpi Terminal - Octave OS Command Interface           ║</span>
+        </div>
+        <div class="terminal-line">
+          <span class="terminal-info">║  Version 1.0.0 - Secure Wallet & Token Management          ║</span>
+        </div>
+        <div class="terminal-line">
+          <span class="terminal-info">╚══════════════════════════════════════════════════════════════╝</span>
+        </div>
+        <div class="terminal-line">
+          <span class="terminal-success">Welcome! Type 'help' to see available commands.</span>
+        </div>
+        <div class="terminal-line">
+          <span class="terminal-warning">All wallet data is encrypted. Token transactions are logged.</span>
+        </div>
+        <div class="terminal-line">&nbsp;</div>
+      </div>
+
+      <div class="terminal-input-area">
+        <span class="terminal-prefix" id="terminal-prefix">pewpi@octave:~$</span>
+        <input 
+          type="text" 
+          class="terminal-input" 
+          id="terminal-input" 
+          placeholder="Type a command..."
+          autocomplete="off"
+          spellcheck="false"
+        >
+      </div>
+    </div>
+
+    <div class="status-bar" id="status-bar">
+      <span class="status-item">
+        <span class="status-label">User:</span>
+        <span class="status-value" id="status-user">-</span>
+      </span>
+      <span class="status-item">
+        <span class="status-label">Tokens:</span>
+        <span class="status-value" id="status-tokens">0 🧱🍄⭐</span>
+      </span>
+      <span class="status-item">
+        <span class="status-label">Commits:</span>
+        <span class="status-value" id="status-commits">0</span>
+      </span>
+      <span class="status-item">
+        <span class="status-label">Wallet:</span>
+        <span class="status-value" id="status-wallet">Not set</span>
+      </span>
+    </div>
+  </div>
+
+  <!-- Terminal Scripts -->
+  <script src="js/terminal-storage.js"></script>
+  <script src="js/terminal-commits.js"></script>
+  <script src="js/terminal-core.js"></script>
+
+  <!-- Terminal UI Controller -->
+  <script>
+    (function() {
+      const terminal = {
+        outputEl: document.getElementById('terminal-output'),
+        inputEl: document.getElementById('terminal-input'),
+        prefixEl: document.getElementById('terminal-prefix'),
+
+        log(text, className = '') {
+          const line = document.createElement('div');
+          line.className = 'terminal-line' + (className ? ' ' + className : '');
+          line.textContent = text;
+          this.outputEl.appendChild(line);
+          this.scrollToBottom();
+        },
+
+        error(text) {
+          this.log('✗ ' + text, 'terminal-error');
+        },
+
+        success(text) {
+          this.log('✓ ' + text, 'terminal-success');
+        },
+
+        warning(text) {
+          this.log('⚠ ' + text, 'terminal-warning');
+        },
+
+        info(text) {
+          this.log('ℹ ' + text, 'terminal-info');
+        },
+
+        highlight(text) {
+          this.log(text, 'terminal-highlight');
+        },
+
+        command(text) {
+          const line = document.createElement('div');
+          line.className = 'terminal-line';
+          line.innerHTML = `<span class="terminal-prompt">pewpi@octave:~$</span> <span class="terminal-command">${this.escapeHtml(text)}</span>`;
+          this.outputEl.appendChild(line);
+          this.scrollToBottom();
+        },
+
+        clear() {
+          this.outputEl.innerHTML = '';
+        },
+
+        scrollToBottom() {
+          this.outputEl.scrollTop = this.outputEl.scrollHeight;
+        },
+
+        escapeHtml(text) {
+          const div = document.createElement('div');
+          div.textContent = text;
+          return div.innerHTML;
+        }
+      };
+
+      // Update status bar
+      async function updateStatus() {
+        const user = TerminalStorage.getCurrentUser();
+        document.getElementById('status-user').textContent = user || '-';
+        
+        if (user) {
+          // Update tokens
+          const tokens = await TerminalStorage.getTokenBalance(user);
+          document.getElementById('status-tokens').textContent = `${tokens} 🧱🍄⭐`;
+          
+          // Update wallet
+          const wallet = await TerminalStorage.getWallet(user);
+          if (wallet) {
+            const shortAddr = wallet.address.slice(0, 6) + '...' + wallet.address.slice(-4);
+            document.getElementById('status-wallet').textContent = shortAddr;
+          } else {
+            document.getElementById('status-wallet').textContent = 'Not set';
+          }
+        }
+        
+        // Update commits
+        const commits = await TerminalStorage.getCommits();
+        document.getElementById('status-commits').textContent = commits.length;
+        
+        // Update prefix with user
+        if (user) {
+          terminal.prefixEl.textContent = `${user}@octave:~$`;
+        }
+      }
+
+      // Handle command input
+      terminal.inputEl.addEventListener('keydown', async (e) => {
+        const input = terminal.inputEl.value;
+
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          
+          if (input.trim()) {
+            terminal.command(input);
+            terminal.inputEl.value = '';
+            
+            try {
+              await TerminalCore.executeCommand(input, terminal);
+              await updateStatus();
+            } catch (error) {
+              terminal.error('Command execution failed: ' + error.message);
+            }
+          }
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          const cmd = TerminalCore.navigateHistory('up');
+          if (cmd !== null) {
+            terminal.inputEl.value = cmd;
+          }
+        } else if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          const cmd = TerminalCore.navigateHistory('down');
+          if (cmd !== null) {
+            terminal.inputEl.value = cmd;
+          }
+        } else if (e.key === 'Tab') {
+          e.preventDefault();
+          const suggestions = TerminalCore.getSuggestions(input);
+          if (suggestions.length === 1) {
+            terminal.inputEl.value = suggestions[0] + ' ';
+          } else if (suggestions.length > 1) {
+            terminal.info('Suggestions: ' + suggestions.join(', '));
+          }
+        }
+      });
+
+      // Focus input on page load
+      terminal.inputEl.focus();
+
+      // Initial status update
+      updateStatus();
+
+      // Update status periodically
+      setInterval(updateStatus, 5000);
+
+      // Make terminal available globally for debugging
+      window.terminal = terminal;
+    })();
+  </script>
+</body>
+</html>

@@ -89,7 +89,12 @@ body:not(.pewpi-live)>*:not(#pewpi-gate){filter:blur(6px);pointer-events:none}
 <body>
   <div class="terminal">
     Octave OS — Octave Logger & Pewpi Secret Encoder
-    <div style="margin-top:8px; color:var(--terminal-text-blue);">Type a message, toggle mode, press Enter (or click Submit). All saved logs are encrypted by default; a small digest is kept for AI ingestion.</div>
+    <div style="margin-top:8px; color:var(--terminal-text-blue);">
+      Type a message, toggle mode, press Enter (or click Submit). All saved logs are encrypted by default; a small digest is kept for AI ingestion.
+      <button onclick="location.href='terminal.html'" style="float:right; background:var(--terminal-text-blue); color:var(--terminal-bg); border:0; padding:6px 12px; border-radius:6px; cursor:pointer; font-weight:600;">
+        🧱 Open Terminal
+      </button>
+    </div>
   </div>
 
   <div class="card">

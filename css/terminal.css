@@ -1,0 +1,243 @@
+/* Terminal CSS - Uses EXACT colors from index.html */
+:root {
+  --page-bg: #e9f1f5;
+  --terminal-bg: #0b3b4a;
+  --terminal-text-blue: #7be6ff;
+  --card-bg: #ffffff;
+  --panel-bg: #f8fbfc;
+  --panel-border: #e6eef0;
+  --accent-dark: #08303b;
+  --muted: #667a80;
+  
+  /* POS color mapping */
+  --color-noun: #f2d024;    /* yellow for nouns */
+  --color-verb: #2fb86a;    /* green for verbs */
+  --color-adj:  #4fb8e0;    /* blue for adjectives */
+  --color-adv:  #ff9a3c;    /* orange for adverbs */
+  --color-other:#e14b4b;    /* red for other / punctuation / fallback */
+  --color-num:  #c66eff;    /* purple-ish for numbers/proper nouns */
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: system-ui, -apple-system, Roboto, "Helvetica Neue", Arial;
+  background: var(--page-bg);
+  color: var(--accent-dark);
+  padding: 18px;
+  min-height: 100vh;
+}
+
+.container {
+  max-width: 920px;
+  margin: 0 auto;
+}
+
+.header {
+  background: var(--terminal-bg);
+  color: var(--terminal-text-blue);
+  padding: 16px;
+  border-radius: 10px;
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header h1 {
+  font-size: 20px;
+  margin: 0;
+  color: var(--terminal-text-blue);
+}
+
+.back-btn {
+  background: var(--terminal-text-blue);
+  color: var(--terminal-bg);
+  border: 0;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  transition: opacity 0.2s;
+}
+
+.back-btn:hover {
+  opacity: 0.8;
+}
+
+.terminal-window {
+  background: var(--terminal-bg);
+  border-radius: 10px;
+  padding: 0;
+  box-shadow: 0 6px 18px rgba(8, 48, 59, 0.15);
+  height: 600px;
+  display: flex;
+  flex-direction: column;
+}
+
+.terminal-header {
+  background: rgba(0, 0, 0, 0.2);
+  padding: 8px 16px;
+  border-bottom: 1px solid rgba(123, 230, 255, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: var(--terminal-text-blue);
+  font-size: 13px;
+  font-family: monospace;
+}
+
+.terminal-output {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  font-family: monospace;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--terminal-text-blue);
+}
+
+.terminal-line {
+  margin-bottom: 4px;
+  word-wrap: break-word;
+}
+
+.terminal-prompt {
+  color: var(--color-verb);
+  font-weight: 700;
+}
+
+.terminal-command {
+  color: var(--terminal-text-blue);
+}
+
+.terminal-error {
+  color: var(--color-other);
+}
+
+.terminal-success {
+  color: var(--color-verb);
+}
+
+.terminal-warning {
+  color: var(--color-adv);
+}
+
+.terminal-info {
+  color: var(--color-adj);
+}
+
+.terminal-highlight {
+  color: var(--color-noun);
+  font-weight: 700;
+}
+
+.terminal-input-area {
+  border-top: 1px solid rgba(123, 230, 255, 0.1);
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.terminal-prefix {
+  color: var(--color-verb);
+  font-family: monospace;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.terminal-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--terminal-text-blue);
+  font-family: monospace;
+  font-size: 14px;
+  outline: none;
+  padding: 4px;
+}
+
+.terminal-input::placeholder {
+  color: var(--muted);
+}
+
+.status-bar {
+  background: var(--card-bg);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-top: 16px;
+  box-shadow: 0 2px 8px rgba(8, 48, 59, 0.06);
+}
+
+.status-item {
+  display: inline-block;
+  margin-right: 24px;
+  font-size: 13px;
+  color: var(--accent-dark);
+}
+
+.status-label {
+  color: var(--muted);
+  font-weight: 600;
+  margin-right: 6px;
+}
+
+.status-value {
+  color: var(--terminal-bg);
+  font-weight: 700;
+}
+
+/* Scrollbar styling */
+.terminal-output::-webkit-scrollbar {
+  width: 8px;
+}
+
+.terminal-output::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.terminal-output::-webkit-scrollbar-thumb {
+  background: rgba(123, 230, 255, 0.3);
+  border-radius: 4px;
+}
+
+.terminal-output::-webkit-scrollbar-thumb:hover {
+  background: rgba(123, 230, 255, 0.5);
+}
+
+/* Responsive design */
+@media (max-width: 760px) {
+  body {
+    padding: 12px;
+  }
+  
+  .terminal-window {
+    height: calc(100vh - 160px);
+  }
+  
+  .header {
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  
+  .back-btn {
+    width: 100%;
+  }
+}
+
+/* Command suggestions */
+.autocomplete-hint {
+  position: absolute;
+  color: var(--muted);
+  pointer-events: none;
+  font-family: monospace;
+  font-size: 14px;
+}
