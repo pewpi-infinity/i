@@ -420,7 +420,8 @@ const TerminalCore = (function() {
       a.click();
       URL.revokeObjectURL(url);
       
-      terminal.success(`Exported ${Object.keys(data.entries || []).length} records`);
+      const entriesCount = Array.isArray(data.entries) ? data.entries.length : Object.keys(data.entries || {}).length;
+      terminal.success(`Exported ${entriesCount} records`);
       terminal.success(`Downloaded as: ${filename}`);
     } catch (error) {
       terminal.error(`Export failed: ${error.message}`);

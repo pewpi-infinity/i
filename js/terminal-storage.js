@@ -173,8 +173,8 @@ const TerminalStorage = (function() {
     const plaintext = typeof value === 'string' ? value : JSON.stringify(value);
     
     // Use existing encryptText from index.html if available
-    if (typeof encryptText === 'function') {
-      return await encryptText(plaintext, passphrase);
+    if (typeof window.encryptText === 'function') {
+      return await window.encryptText(plaintext, passphrase);
     }
     
     // Fallback: simple base64 (NOT SECURE - should use proper encryption)
@@ -192,8 +192,8 @@ const TerminalStorage = (function() {
     }
     
     // Use existing decryptText from index.html if available
-    if (typeof decryptText === 'function') {
-      const decrypted = await decryptText(encrypted, passphrase);
+    if (typeof window.decryptText === 'function') {
+      const decrypted = await window.decryptText(encrypted, passphrase);
       try {
         return JSON.parse(decrypted);
       } catch (e) {

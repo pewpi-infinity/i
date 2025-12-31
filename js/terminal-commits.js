@@ -4,6 +4,9 @@
  */
 
 const TerminalCommits = (function() {
+  // Genesis hash for empty commit chain
+  const GENESIS_HASH = '0000000000000000000000000000000000000000';
+  
   let commitQueue = [];
   let processingQueue = false;
 
@@ -22,7 +25,7 @@ const TerminalCommits = (function() {
    */
   async function getLatestCommitHash() {
     const commits = await window.TerminalStorage.getCommits();
-    if (commits.length === 0) return '0000000000000000000000000000000000000000';
+    if (commits.length === 0) return GENESIS_HASH;
     return commits[commits.length - 1].hash;
   }
 
@@ -104,7 +107,7 @@ const TerminalCommits = (function() {
     const commits = await window.TerminalStorage.getCommits();
     if (commits.length === 0) return { valid: true, message: 'No commits to verify' };
     
-    let prevHash = '0000000000000000000000000000000000000000';
+    let prevHash = GENESIS_HASH;
     
     for (let i = 0; i < commits.length; i++) {
       const commit = commits[i];
