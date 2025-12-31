@@ -135,13 +135,22 @@ const TerminalStorage = (function() {
     
     for (let i = 0; i < parts.length - 1; i++) {
       const part = parts[i];
-      if (!current[part]) {
+      // Guard against prototype pollution
+      if (part === '__proto__' || part === 'constructor' || part === 'prototype') {
+        throw new Error('Invalid property name: prototype pollution detected');
+      }
+      if (!current[part] || typeof current[part] !== 'object') {
         current[part] = {};
       }
       current = current[part];
     }
     
-    current[parts[parts.length - 1]] = value;
+    const lastPart = parts[parts.length - 1];
+    // Guard against prototype pollution on final assignment
+    if (lastPart === '__proto__' || lastPart === 'constructor' || lastPart === 'prototype') {
+      throw new Error('Invalid property name: prototype pollution detected');
+    }
+    current[lastPart] = value;
   }
 
   /**
@@ -152,6 +161,10 @@ const TerminalStorage = (function() {
     let current = obj;
     
     for (const part of parts) {
+      // Guard against prototype pollution
+      if (part === '__proto__' || part === 'constructor' || part === 'prototype') {
+        return undefined;
+      }
       if (!current || typeof current !== 'object') {
         return undefined;
       }
