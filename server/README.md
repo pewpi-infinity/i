@@ -19,7 +19,7 @@ This server solves these issues by:
 
 ### Prerequisites
 
-- Node.js 14+ installed
+- Node.js 18+ installed
 - A GitHub Personal Access Token with `repo` scope
   - Generate at: https://github.com/settings/tokens
 
