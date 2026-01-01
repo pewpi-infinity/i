@@ -1,3 +1,11 @@
+# Environment files
+server/.env
+
+# Node modules
+server/node_modules/
+node_modules/
+
+# IDE and editor files
 # Environment variables (contains secrets)
 server/.env
 
@@ -29,6 +37,19 @@ Thumbs.db
 *.swp
 *.swo
 *~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs (exclude the actual log files in logs/ since those are tracked)
+*.log
+!logs/*.log
+
+# Temporary files
+tmp/
+temp/
+*.tmp
 # top-level ignores
 node_modules/
 .env

@@ -205,6 +205,8 @@ async function deriveKey(passphrase, salt, iterations){
 
     <div class="controls">
         <select id="method">
+            <option value="github">GitHub (direct commit from browser)</option>
+            <option value="commit-server">Commit Server (secure server-side)</option>
             <option value="secure-commit">Secure Commit (via server - RECOMMENDED)</option>
             <option value="github">GitHub (direct commit from browser - DEPRECATED)</option>
             <option value="server">Local server (POST /log)</option>
@@ -228,6 +230,7 @@ async function deriveKey(passphrase, salt, iterations){
     </div>
 
     <input id="cmd" placeholder="Type here…" autocomplete="off" autocorrect="off" autocapitalize="off" />
+    <div class="note">Note: GitHub method will commit to pewpi-infinity/i logs/txt.log using the token you provide. Commit Server is recommended for security. Keep tokens secret.</div>
     <div class="note">Note: GitHub (secure server) method uses a server-side endpoint to safely commit. Direct browser method is deprecated due to security risks.</div>
 async function encryptText(plaintext, passphrase, iterations=200000){
   // prefer existing global implementation if bridge provided it
@@ -278,8 +281,15 @@ function tokenizeWithSpaces(text){
   return text.match(re) || [];
 }
 
+<!-- Include commit-client.js -->
+<script src="/static/js/commit-client.js"></script>
 <script src="static/js/commit-client.js"></script>
 <script>
+// Configure commit server (set these via server-side rendering in production)
+// For local development, set COMMIT_SECRET here or via server configuration
+// window.COMMIT_SECRET = 'your-secret-here'; // DO NOT commit actual secrets
+// window.COMMIT_SERVER_URL = 'http://localhost:3000/commit'; // Optional override
+
 const terminal = document.getElementById("terminal");
 const input = document.getElementById("cmd");
 const methodSelect = document.getElementById("method");
@@ -764,6 +774,37 @@ async function fetchAiResponse(prompt){
   }
 }
 
+// Commit Server method (secure server-side commit)
+async function sendToCommitServer(text) {
+    if (typeof CommitClient === 'undefined') {
+        printToTerminal('✘ CommitClient not loaded. Ensure commit-client.js is included.');
+        return;
+    }
+
+    if (!window.COMMIT_SECRET) {
+        printToTerminal('✘ COMMIT_SECRET not configured. Set window.COMMIT_SECRET in your environment.');
+        printToTerminal('   For local testing, you can set it in the script or use server configuration.');
+        return;
+    }
+
+    try {
+        const result = await CommitClient.send(text);
+        printToTerminal('✔ logged to GitHub via commit server');
+        printToTerminal('  commit: ' + result.commit.substring(0, 7));
+    } catch (err) {
+        printToTerminal('✘ commit server error: ' + err.message);
+    }
+}
+
+input.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') {
+        const text = input.value.trim();
+        if (!text) return;
+        input.value = '';
+        printToTerminal('∞ > ' + text);
+
+        const method = methodSelect.value;
+        if (method === 'commit-server') sendToCommitServer(text);
 /* expose some functions for debugging in console if needed */
 window.octave = { loadLogs, saveLogs, encryptText, decryptText, pushQueue, pushToServer };
 </script>

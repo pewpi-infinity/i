@@ -1,4 +1,7 @@
 {
+  "name": "commit-server",
+  "version": "1.0.0",
+  "description": "Server-side commit endpoint for logging typed text to logs/txt.log",
   "name": "pewpi-infinity-commit-server",
   "version": "1.0.0",
   "description": "Secure server-side commit endpoint for logging to GitHub",
@@ -7,6 +10,13 @@
     "start": "node commit-server.js",
     "dev": "node commit-server.js"
   },
+  "keywords": ["logging", "github", "commit"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "@octokit/rest": "^20.0.2",
+    "dotenv": "^16.3.1"
   "keywords": ["logging", "github", "secure"],
   "author": "pewpi-infinity",
   "license": "MIT",
