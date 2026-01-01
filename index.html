@@ -205,6 +205,19 @@ async function deriveKey(passphrase, salt, iterations){
 
     <div class="controls">
         <select id="method">
+            <option value="secure-commit">Secure Commit (via server - RECOMMENDED)</option>
+            <option value="github">GitHub (direct commit from browser - DEPRECATED)</option>
+            <option value="server">Local server (POST /log)</option>
+            <option value="fs">Local file (File System Access API)</option>
+        </select>
+        <input id="secret" type="password" placeholder="Commit secret" style="width:220px" />
+        <button id="saveSecret">Save Secret</button>
+        <input id="token" type="text" placeholder="GitHub token (deprecated)" style="width:220px;display:none;" />
+        <button id="saveToken" style="display:none;">Save Token</button>
+    </div>
+
+    <input id="cmd" placeholder="Type here…" autocomplete="off" autocorrect="off" autocapitalize="off" />
+    <div class="note">Note: "Secure Commit" uses server-side GitHub authentication (no token in browser). Configure secret to match server.</div>
             <option value="github-server">GitHub (secure server commit) - RECOMMENDED</option>
             <option value="github">GitHub (direct commit from browser) - DEPRECATED</option>
             <option value="server">Local server (POST /log)</option>
@@ -272,11 +285,15 @@ const input = document.getElementById("cmd");
 const methodSelect = document.getElementById("method");
 const tokenInput = document.getElementById("token");
 const saveTokenBtn = document.getElementById("saveToken");
+const secretInput = document.getElementById("secret");
+const saveSecretBtn = document.getElementById("saveSecret");
 
 const OWNER = 'pewpi-infinity';
 const REPO = 'i';
 const PATH = 'logs/txt.log';
 
+// Load saved token from localStorage (for deprecated method)
+tokenInput.value = localStorage.getItem('GH_LOG_TOKEN') || '';
 // Load saved token/secret from localStorage based on method
 function loadTokenForMethod() {
     const method = methodSelect.value;
@@ -296,6 +313,53 @@ loadTokenForMethod();
 
 // Update token placeholder when method changes
 methodSelect.addEventListener('change', loadTokenForMethod);
+
+// Load saved secret from localStorage (for secure commit)
+secretInput.value = localStorage.getItem('COMMIT_SECRET') || '';
+
+// Configure CommitClient if secret is available
+if (secretInput.value) {
+    CommitClient.configure({
+        serverUrl: 'http://localhost:3000',
+        secret: secretInput.value
+    });
+}
+
+// Show/hide token input based on method
+methodSelect.addEventListener('change', () => {
+    const method = methodSelect.value;
+    if (method === 'github') {
+        tokenInput.style.display = 'inline';
+        saveTokenBtn.style.display = 'inline';
+        secretInput.style.display = 'none';
+        saveSecretBtn.style.display = 'none';
+    } else if (method === 'secure-commit') {
+        tokenInput.style.display = 'none';
+        saveTokenBtn.style.display = 'none';
+        secretInput.style.display = 'inline';
+        saveSecretBtn.style.display = 'inline';
+    } else {
+        tokenInput.style.display = 'none';
+        saveTokenBtn.style.display = 'none';
+        secretInput.style.display = 'none';
+        saveSecretBtn.style.display = 'none';
+    }
+});
+
+saveSecretBtn.addEventListener('click', () => {
+    const s = secretInput.value.trim();
+    if (s) {
+        localStorage.setItem('COMMIT_SECRET', s);
+        CommitClient.configure({
+            serverUrl: 'http://localhost:3000',
+            secret: s
+        });
+        printToTerminal('✔ secret saved to localStorage');
+    } else {
+        localStorage.removeItem('COMMIT_SECRET');
+        printToTerminal('⚠ secret cleared');
+    }
+});
 
 saveTokenBtn.addEventListener('click', () => {
     const t = tokenInput.value.trim();
@@ -412,6 +476,27 @@ function appendLogObject(obj){
   }
 }
 
+// Secure commit method: uses server-side endpoint (no token in browser)
+async function sendToSecureCommit(text) {
+    const secret = localStorage.getItem('COMMIT_SECRET') || secretInput.value.trim();
+    if (!secret) {
+        printToTerminal('✘ No secret set. Enter secret and Save Secret.');
+        return;
+    }
+
+    try {
+        const result = await CommitClient.send(text);
+        if (result.ok) {
+            printToTerminal('✔ logged to GitHub via secure server');
+        } else {
+            printToTerminal('✘ server error: ' + (result.error || 'unknown'));
+        }
+    } catch (err) {
+        printToTerminal('✘ commit error: ' + err.message);
+    }
+}
+
+async function sendToServer(text) {
 // GitHub secure server commit method (RECOMMENDED)
 async function sendToGitHubServer(text) {
     if (!window.CommitClient) {
@@ -735,6 +820,7 @@ window.octave = { loadLogs, saveLogs, encryptText, decryptText, pushQueue, pushT
 </style>
 
         const method = methodSelect.value;
+        if (method === 'secure-commit') sendToSecureCommit(text);
         if (method === 'github-server') sendToGitHubServer(text);
         else if (method === 'server') sendToServer(text);
         else if (method === 'fs') sendToFS(text);
@@ -834,6 +920,13 @@ window.octave = { loadLogs, saveLogs, encryptText, decryptText, pushQueue, pushT
     }
   }
 
+// focus UX
+window.addEventListener('load', () => { 
+    input.focus();
+    // Trigger initial method change to show correct inputs
+    methodSelect.dispatchEvent(new Event('change'));
+});
+terminal.addEventListener('click', () => { input.focus(); });
   send.addEventListener("click", ask);
   input.addEventListener("keydown",(e)=>{ if(e.key==="Enter") ask(); });
 })();
