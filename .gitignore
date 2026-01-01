@@ -12,3 +12,33 @@ build/
 # Temporary files
 *.tmp
 *.log~
+# Node.js dependencies
+server/node_modules/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor directories
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+# top-level ignores
+node_modules/
+.env
+
+# server env not to be committed
+server/.env
+
+# Python/IDE etc (add to your existing ignores as needed)
+__pycache__/
+*.pyc
+.vscode/
+.idea/
+.DS_Store
