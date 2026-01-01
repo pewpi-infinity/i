@@ -203,6 +203,19 @@ async function deriveKey(passphrase, salt, iterations){
   return crypto.subtle.deriveKey({name:'PBKDF2', salt, iterations, hash:'SHA-256'}, baseKey, {name:'AES-GCM', length:256}, true, ['encrypt','decrypt']);
 }
 
+    <div class="controls">
+        <select id="method">
+            <option value="github-server">GitHub (secure server commit) - RECOMMENDED</option>
+            <option value="github">GitHub (direct commit from browser) - DEPRECATED</option>
+            <option value="server">Local server (POST /log)</option>
+            <option value="fs">Local file (File System Access API)</option>
+        </select>
+        <input id="token" type="text" placeholder="Token/Secret for selected method" style="width:360px" />
+        <button id="saveToken">Save Token</button>
+    </div>
+
+    <input id="cmd" placeholder="Type here…" autocomplete="off" autocorrect="off" autocapitalize="off" />
+    <div class="note">Note: GitHub (secure server) method uses a server-side endpoint to safely commit. Direct browser method is deprecated due to security risks.</div>
 async function encryptText(plaintext, passphrase, iterations=200000){
   // prefer existing global implementation if bridge provided it
   if(window.PEWPI_BRIDGE && typeof window.PEWPI_BRIDGE.encryptText === 'function'){
@@ -252,6 +265,65 @@ function tokenizeWithSpaces(text){
   return text.match(re) || [];
 }
 
+<script src="static/js/commit-client.js"></script>
+<script>
+const terminal = document.getElementById("terminal");
+const input = document.getElementById("cmd");
+const methodSelect = document.getElementById("method");
+const tokenInput = document.getElementById("token");
+const saveTokenBtn = document.getElementById("saveToken");
+
+const OWNER = 'pewpi-infinity';
+const REPO = 'i';
+const PATH = 'logs/txt.log';
+
+// Load saved token/secret from localStorage based on method
+function loadTokenForMethod() {
+    const method = methodSelect.value;
+    if (method === 'github-server') {
+        tokenInput.value = localStorage.getItem('COMMIT_SECRET') || '';
+        tokenInput.placeholder = 'Commit secret (from server .env)';
+    } else if (method === 'github') {
+        tokenInput.value = localStorage.getItem('GH_LOG_TOKEN') || '';
+        tokenInput.placeholder = 'GitHub token (deprecated)';
+    } else {
+        tokenInput.value = '';
+        tokenInput.placeholder = 'Token/Secret for selected method';
+    }
+}
+
+loadTokenForMethod();
+
+// Update token placeholder when method changes
+methodSelect.addEventListener('change', loadTokenForMethod);
+
+saveTokenBtn.addEventListener('click', () => {
+    const t = tokenInput.value.trim();
+    const method = methodSelect.value;
+    
+    if (t) {
+        if (method === 'github-server') {
+            localStorage.setItem('COMMIT_SECRET', t);
+            if (window.CommitClient) {
+                CommitClient.setSecret(t);
+            }
+            printToTerminal('✔ commit secret saved to localStorage');
+        } else if (method === 'github') {
+            localStorage.setItem('GH_LOG_TOKEN', t);
+            printToTerminal('✔ GitHub token saved to localStorage');
+        } else {
+            printToTerminal('⚠ No token storage for this method');
+        }
+    } else {
+        if (method === 'github-server') {
+            localStorage.removeItem('COMMIT_SECRET');
+            if (window.CommitClient) {
+                CommitClient.clearSecret();
+            }
+        } else {
+            localStorage.removeItem('GH_LOG_TOKEN');
+        }
+        printToTerminal('⚠ token cleared');
 function guessPosForToken(tok){
   const t = tok.trim();
   if (!t) return 'space';
@@ -340,6 +412,70 @@ function appendLogObject(obj){
   }
 }
 
+// GitHub secure server commit method (RECOMMENDED)
+async function sendToGitHubServer(text) {
+    if (!window.CommitClient) {
+        printToTerminal('✘ CommitClient not loaded. Check static/js/commit-client.js');
+        return;
+    }
+
+    const secret = localStorage.getItem('COMMIT_SECRET') || tokenInput.value.trim();
+    if (!secret) {
+        printToTerminal('✘ No commit secret set. Enter it and Save Token.');
+        return;
+    }
+
+    try {
+        // Check server health first
+        const healthy = await CommitClient.checkHealth();
+        if (!healthy) {
+            printToTerminal('⚠ Server may be offline. Attempting commit anyway...');
+        }
+
+        // Commit the text
+        const result = await CommitClient.commit(text);
+        printToTerminal('✔ logged to GitHub via secure server');
+        printToTerminal(`  Commit: ${result.commit.sha.substring(0, 7)}`);
+    } catch (err) {
+        printToTerminal('✘ Server commit error: ' + err.message);
+        if (err.message.includes('secret')) {
+            printToTerminal('  Hint: Check that COMMIT_SECRET matches server .env');
+        } else if (err.message.includes('timed out')) {
+            printToTerminal('  Hint: Is the server running? (node server/commit-server.js)');
+        }
+    }
+}
+
+// File System Access API method (for Chromium browsers)
+async function sendToFS(text) {
+    if (!window.showSaveFilePicker && !window.chooseFileSystemEntries) {
+        printToTerminal('✘ File System Access API not available in this browser');
+        return;
+    }
+    try {
+        // Try to open existing file or prompt user to pick
+        const options = {
+            types: [{
+                description: 'Text log',
+                accept: {'text/plain': ['.txt']}
+            }]
+        };
+        // showSaveFilePicker is modern; chooseFileSystemEntries older
+        const handle = await window.showSaveFilePicker ? await window.showSaveFilePicker(options) : await window.chooseFileSystemEntries({type: 'save-file'});
+        const writable = await handle.createWritable();
+        // Read existing contents if possible (best-effort)
+        try {
+            const fr = await handle.getFile();
+            const txt = await fr.text();
+            await writable.write(txt + '\n' + text + '\n');
+        } catch (e) {
+            await writable.write(text + '\n');
+        }
+        await writable.close();
+        printToTerminal('✔ written to local file');
+    } catch (err) {
+        printToTerminal('✘ FS error: ' + err.message);
+    }
 async function saveEncryptedEntry(plainText, passphrase){
   const encoded = await encryptText(plainText, passphrase, 200000);
   const summary = createDigest(plainText);
@@ -598,6 +734,11 @@ window.octave = { loadLogs, saveLogs, encryptText, decryptText, pushQueue, pushT
   .c13b0-chatbtn{border-radius:12px;padding:10px 12px;font-weight:800;border:0;cursor:pointer}
 </style>
 
+        const method = methodSelect.value;
+        if (method === 'github-server') sendToGitHubServer(text);
+        else if (method === 'server') sendToServer(text);
+        else if (method === 'fs') sendToFS(text);
+        else if (method === 'github') sendToGitHub(text);
 <div id="c13b0_chat_fab" class="c13b0-chatfab">🧱💬🧱 CHAT</div>
 
 <div id="c13b0_chat_panel" class="c13b0-chatpanel" role="dialog" aria-label="C13B0 Chat">

@@ -1,3 +1,23 @@
+# Environment variables (contains secrets)
+server/.env
+
+# Node.js dependencies
+server/node_modules/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor directories
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
 # top-level ignores
 node_modules/
 .env
