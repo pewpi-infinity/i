@@ -2,6 +2,9 @@
   "name": "commit-server",
   "version": "1.0.0",
   "description": "Server-side commit endpoint for logging typed text to logs/txt.log",
+  "name": "pewpi-infinity-commit-server",
+  "version": "1.0.0",
+  "description": "Secure server-side commit endpoint for logging to GitHub",
   "main": "commit-server.js",
   "scripts": {
     "start": "node commit-server.js",
@@ -14,5 +17,24 @@
     "express": "^4.18.2",
     "@octokit/rest": "^20.0.2",
     "dotenv": "^16.3.1"
+  "keywords": ["logging", "github", "secure"],
+  "author": "pewpi-infinity",
+  "license": "MIT",
+  "dependencies": {
+    "@octokit/rest": "^20.0.2",
+    "express": "^4.18.2",
+    "dotenv": "^16.3.1",
+    "cors": "^2.8.5"
+  "name": "pewpi-commit-server",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "start": "node commit-server.js"
+  },
+  "dependencies": {
+    "@octokit/rest": "^19.0.7",
+    "body-parser": "^1.20.2",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2"
   }
 }

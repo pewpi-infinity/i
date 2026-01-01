@@ -1,45 +1,9 @@
 <!doctype html>
-[core]
-	repositoryformatversion = 0
-	filemode = true
-	bare = false
-	logallrefupdates = true
-[remote "origin"]
-	url = https://github.com/pewpi-infinity/infinity-brain-111.git
-	fetch = +refs/heads/main:refs/remotes/origin/main
-[branch "main"]
-	remote = origin
-	merge = refs/heads/main
-<!-- 🐶 PEWPI SIGN-IN (GLOBAL) -->
-<div id="pewpi-gate">
-  <h1>🐶 pewpi</h1>
-  <input id="pewpi_user" placeholder="Handle">
-  <button onclick="pewpiUnlock()">Enter</button>
-</div>
-<script>
-function pewpiUnlock(){
-  localStorage.setItem("pewpi_user", document.getElementById("pewpi_user").value);
-  document.getElementById("pewpi-gate").style.display="none";
-  document.body.classList.add("pewpi-live");
-}
-if(localStorage.getItem("pewpi_user")){
-  document.addEventListener("DOMContentLoaded",()=>{
-    const g=document.getElementById("pewpi-gate");
-    if(g) g.style.display="none";
-    document.body.classList.add("pewpi-live");
-  });
-}
-</script>
-<style>
-#pewpi-gate{position:fixed;inset:0;background:#0e0e0e;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999}
-#pewpi-gate button{background:#ff69b4;border:0;padding:10px 18px}
-body:not(.pewpi-live)>*:not(#pewpi-gate){filter:blur(6px);pointer-events:none}
-</style>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>∞ i</title>
+  <title>Octave OS — Octave Logger & Pewpi Secret Encoder (POS colors & reliable logging)</title>
   <style>
     :root{
       --page-bg: #e9f1f5;
@@ -89,17 +53,7 @@ body:not(.pewpi-live)>*:not(#pewpi-gate){filter:blur(6px);pointer-events:none}
 <body>
   <div class="terminal">
     Octave OS — Octave Logger & Pewpi Secret Encoder
-    <div style="margin-top:8px; color:var(--terminal-text-blue);">
-      Type a message, toggle mode, press Enter (or click Submit). All saved logs are encrypted by default; a small digest is kept for AI ingestion.
-      <button onclick="location.href='terminal.html'" style="float:right; background:var(--terminal-text-blue); color:var(--terminal-bg); border:0; padding:6px 12px; border-radius:6px; cursor:pointer; font-weight:600;">
-        🧱 Open Terminal
-      </button>
     <div style="margin-top:8px; color:var(--terminal-text-blue);">Type a message, toggle mode, press Enter (or click Submit). All saved logs are encrypted by default; a small digest is kept for AI ingestion.</div>
-    <div style="margin-top:12px;">
-      <a href="terminal.html" style="color:var(--terminal-text-blue); text-decoration:none; display:inline-flex; align-items:center; gap:6px; padding:6px 12px; border:1px solid var(--terminal-text-blue); border-radius:4px; font-size:13px; transition:all 0.3s ease;" onmouseover="this.style.background='rgba(123,230,255,0.1)'" onmouseout="this.style.background='transparent'">
-        <span style="font-size:16px;">⚡</span> Open Integration Terminal
-      </a>
-    </div>
   </div>
 
   <div class="card">
@@ -203,35 +157,6 @@ async function deriveKey(passphrase, salt, iterations){
   return crypto.subtle.deriveKey({name:'PBKDF2', salt, iterations, hash:'SHA-256'}, baseKey, {name:'AES-GCM', length:256}, true, ['encrypt','decrypt']);
 }
 
-    <div class="controls">
-        <select id="method">
-            <option value="github">GitHub (direct commit from browser)</option>
-            <option value="commit-server">Commit Server (secure server-side)</option>
-            <option value="secure-commit">Secure Commit (via server - RECOMMENDED)</option>
-            <option value="github">GitHub (direct commit from browser - DEPRECATED)</option>
-            <option value="server">Local server (POST /log)</option>
-            <option value="fs">Local file (File System Access API)</option>
-        </select>
-        <input id="secret" type="password" placeholder="Commit secret" style="width:220px" />
-        <button id="saveSecret">Save Secret</button>
-        <input id="token" type="text" placeholder="GitHub token (deprecated)" style="width:220px;display:none;" />
-        <button id="saveToken" style="display:none;">Save Token</button>
-    </div>
-
-    <input id="cmd" placeholder="Type here…" autocomplete="off" autocorrect="off" autocapitalize="off" />
-    <div class="note">Note: "Secure Commit" uses server-side GitHub authentication (no token in browser). Configure secret to match server.</div>
-            <option value="github-server">GitHub (secure server commit) - RECOMMENDED</option>
-            <option value="github">GitHub (direct commit from browser) - DEPRECATED</option>
-            <option value="server">Local server (POST /log)</option>
-            <option value="fs">Local file (File System Access API)</option>
-        </select>
-        <input id="token" type="text" placeholder="Token/Secret for selected method" style="width:360px" />
-        <button id="saveToken">Save Token</button>
-    </div>
-
-    <input id="cmd" placeholder="Type here…" autocomplete="off" autocorrect="off" autocapitalize="off" />
-    <div class="note">Note: GitHub method will commit to pewpi-infinity/i logs/txt.log using the token you provide. Commit Server is recommended for security. Keep tokens secret.</div>
-    <div class="note">Note: GitHub (secure server) method uses a server-side endpoint to safely commit. Direct browser method is deprecated due to security risks.</div>
 async function encryptText(plaintext, passphrase, iterations=200000){
   // prefer existing global implementation if bridge provided it
   if(window.PEWPI_BRIDGE && typeof window.PEWPI_BRIDGE.encryptText === 'function'){
@@ -281,123 +206,6 @@ function tokenizeWithSpaces(text){
   return text.match(re) || [];
 }
 
-<!-- Include commit-client.js -->
-<script src="/static/js/commit-client.js"></script>
-<script src="static/js/commit-client.js"></script>
-<script>
-// Configure commit server (set these via server-side rendering in production)
-// For local development, set COMMIT_SECRET here or via server configuration
-// window.COMMIT_SECRET = 'your-secret-here'; // DO NOT commit actual secrets
-// window.COMMIT_SERVER_URL = 'http://localhost:3000/commit'; // Optional override
-
-const terminal = document.getElementById("terminal");
-const input = document.getElementById("cmd");
-const methodSelect = document.getElementById("method");
-const tokenInput = document.getElementById("token");
-const saveTokenBtn = document.getElementById("saveToken");
-const secretInput = document.getElementById("secret");
-const saveSecretBtn = document.getElementById("saveSecret");
-
-const OWNER = 'pewpi-infinity';
-const REPO = 'i';
-const PATH = 'logs/txt.log';
-
-// Load saved token from localStorage (for deprecated method)
-tokenInput.value = localStorage.getItem('GH_LOG_TOKEN') || '';
-// Load saved token/secret from localStorage based on method
-function loadTokenForMethod() {
-    const method = methodSelect.value;
-    if (method === 'github-server') {
-        tokenInput.value = localStorage.getItem('COMMIT_SECRET') || '';
-        tokenInput.placeholder = 'Commit secret (from server .env)';
-    } else if (method === 'github') {
-        tokenInput.value = localStorage.getItem('GH_LOG_TOKEN') || '';
-        tokenInput.placeholder = 'GitHub token (deprecated)';
-    } else {
-        tokenInput.value = '';
-        tokenInput.placeholder = 'Token/Secret for selected method';
-    }
-}
-
-loadTokenForMethod();
-
-// Update token placeholder when method changes
-methodSelect.addEventListener('change', loadTokenForMethod);
-
-// Load saved secret from localStorage (for secure commit)
-secretInput.value = localStorage.getItem('COMMIT_SECRET') || '';
-
-// Configure CommitClient if secret is available
-if (secretInput.value) {
-    CommitClient.configure({
-        serverUrl: 'http://localhost:3000',
-        secret: secretInput.value
-    });
-}
-
-// Show/hide token input based on method
-methodSelect.addEventListener('change', () => {
-    const method = methodSelect.value;
-    if (method === 'github') {
-        tokenInput.style.display = 'inline';
-        saveTokenBtn.style.display = 'inline';
-        secretInput.style.display = 'none';
-        saveSecretBtn.style.display = 'none';
-    } else if (method === 'secure-commit') {
-        tokenInput.style.display = 'none';
-        saveTokenBtn.style.display = 'none';
-        secretInput.style.display = 'inline';
-        saveSecretBtn.style.display = 'inline';
-    } else {
-        tokenInput.style.display = 'none';
-        saveTokenBtn.style.display = 'none';
-        secretInput.style.display = 'none';
-        saveSecretBtn.style.display = 'none';
-    }
-});
-
-saveSecretBtn.addEventListener('click', () => {
-    const s = secretInput.value.trim();
-    if (s) {
-        localStorage.setItem('COMMIT_SECRET', s);
-        CommitClient.configure({
-            serverUrl: 'http://localhost:3000',
-            secret: s
-        });
-        printToTerminal('✔ secret saved to localStorage');
-    } else {
-        localStorage.removeItem('COMMIT_SECRET');
-        printToTerminal('⚠ secret cleared');
-    }
-});
-
-saveTokenBtn.addEventListener('click', () => {
-    const t = tokenInput.value.trim();
-    const method = methodSelect.value;
-    
-    if (t) {
-        if (method === 'github-server') {
-            localStorage.setItem('COMMIT_SECRET', t);
-            if (window.CommitClient) {
-                CommitClient.setSecret(t);
-            }
-            printToTerminal('✔ commit secret saved to localStorage');
-        } else if (method === 'github') {
-            localStorage.setItem('GH_LOG_TOKEN', t);
-            printToTerminal('✔ GitHub token saved to localStorage');
-        } else {
-            printToTerminal('⚠ No token storage for this method');
-        }
-    } else {
-        if (method === 'github-server') {
-            localStorage.removeItem('COMMIT_SECRET');
-            if (window.CommitClient) {
-                CommitClient.clearSecret();
-            }
-        } else {
-            localStorage.removeItem('GH_LOG_TOKEN');
-        }
-        printToTerminal('⚠ token cleared');
 function guessPosForToken(tok){
   const t = tok.trim();
   if (!t) return 'space';
@@ -486,91 +294,6 @@ function appendLogObject(obj){
   }
 }
 
-// Secure commit method: uses server-side endpoint (no token in browser)
-async function sendToSecureCommit(text) {
-    const secret = localStorage.getItem('COMMIT_SECRET') || secretInput.value.trim();
-    if (!secret) {
-        printToTerminal('✘ No secret set. Enter secret and Save Secret.');
-        return;
-    }
-
-    try {
-        const result = await CommitClient.send(text);
-        if (result.ok) {
-            printToTerminal('✔ logged to GitHub via secure server');
-        } else {
-            printToTerminal('✘ server error: ' + (result.error || 'unknown'));
-        }
-    } catch (err) {
-        printToTerminal('✘ commit error: ' + err.message);
-    }
-}
-
-async function sendToServer(text) {
-// GitHub secure server commit method (RECOMMENDED)
-async function sendToGitHubServer(text) {
-    if (!window.CommitClient) {
-        printToTerminal('✘ CommitClient not loaded. Check static/js/commit-client.js');
-        return;
-    }
-
-    const secret = localStorage.getItem('COMMIT_SECRET') || tokenInput.value.trim();
-    if (!secret) {
-        printToTerminal('✘ No commit secret set. Enter it and Save Token.');
-        return;
-    }
-
-    try {
-        // Check server health first
-        const healthy = await CommitClient.checkHealth();
-        if (!healthy) {
-            printToTerminal('⚠ Server may be offline. Attempting commit anyway...');
-        }
-
-        // Commit the text
-        const result = await CommitClient.commit(text);
-        printToTerminal('✔ logged to GitHub via secure server');
-        printToTerminal(`  Commit: ${result.commit.sha.substring(0, 7)}`);
-    } catch (err) {
-        printToTerminal('✘ Server commit error: ' + err.message);
-        if (err.message.includes('secret')) {
-            printToTerminal('  Hint: Check that COMMIT_SECRET matches server .env');
-        } else if (err.message.includes('timed out')) {
-            printToTerminal('  Hint: Is the server running? (node server/commit-server.js)');
-        }
-    }
-}
-
-// File System Access API method (for Chromium browsers)
-async function sendToFS(text) {
-    if (!window.showSaveFilePicker && !window.chooseFileSystemEntries) {
-        printToTerminal('✘ File System Access API not available in this browser');
-        return;
-    }
-    try {
-        // Try to open existing file or prompt user to pick
-        const options = {
-            types: [{
-                description: 'Text log',
-                accept: {'text/plain': ['.txt']}
-            }]
-        };
-        // showSaveFilePicker is modern; chooseFileSystemEntries older
-        const handle = await window.showSaveFilePicker ? await window.showSaveFilePicker(options) : await window.chooseFileSystemEntries({type: 'save-file'});
-        const writable = await handle.createWritable();
-        // Read existing contents if possible (best-effort)
-        try {
-            const fr = await handle.getFile();
-            const txt = await fr.text();
-            await writable.write(txt + '\n' + text + '\n');
-        } catch (e) {
-            await writable.write(text + '\n');
-        }
-        await writable.close();
-        printToTerminal('✔ written to local file');
-    } catch (err) {
-        printToTerminal('✘ FS error: ' + err.message);
-    }
 async function saveEncryptedEntry(plainText, passphrase){
   const encoded = await encryptText(plainText, passphrase, 200000);
   const summary = createDigest(plainText);
@@ -774,37 +497,6 @@ async function fetchAiResponse(prompt){
   }
 }
 
-// Commit Server method (secure server-side commit)
-async function sendToCommitServer(text) {
-    if (typeof CommitClient === 'undefined') {
-        printToTerminal('✘ CommitClient not loaded. Ensure commit-client.js is included.');
-        return;
-    }
-
-    if (!window.COMMIT_SECRET) {
-        printToTerminal('✘ COMMIT_SECRET not configured. Set window.COMMIT_SECRET in your environment.');
-        printToTerminal('   For local testing, you can set it in the script or use server configuration.');
-        return;
-    }
-
-    try {
-        const result = await CommitClient.send(text);
-        printToTerminal('✔ logged to GitHub via commit server');
-        printToTerminal('  commit: ' + result.commit.substring(0, 7));
-    } catch (err) {
-        printToTerminal('✘ commit server error: ' + err.message);
-    }
-}
-
-input.addEventListener('keydown', function (e) {
-    if (e.key === 'Enter') {
-        const text = input.value.trim();
-        if (!text) return;
-        input.value = '';
-        printToTerminal('∞ > ' + text);
-
-        const method = methodSelect.value;
-        if (method === 'commit-server') sendToCommitServer(text);
 /* expose some functions for debugging in console if needed */
 window.octave = { loadLogs, saveLogs, encryptText, decryptText, pushQueue, pushToServer };
 </script>
@@ -848,131 +540,6 @@ window.octave = { loadLogs, saveLogs, encryptText, decryptText, pushQueue, pushT
 <script src="helper-octave-extension.js"></script>
 <!-- END MODULES -->
 </body>
-<!-- C13B0_CHAT_WIDGET_BEGIN -->
-<style>
-  .c13b0-chatfab{position:fixed;right:18px;bottom:18px;z-index:99999;border-radius:999px;padding:12px 14px;font-weight:700;box-shadow:0 10px 30px rgba(0,0,0,.25);cursor:pointer;user-select:none}
-  .c13b0-chatpanel{position:fixed;right:18px;bottom:72px;width:min(520px,calc(100vw - 36px));height:min(560px,calc(100vh - 120px));z-index:99999;border-radius:18px;overflow:hidden;box-shadow:0 14px 40px rgba(0,0,0,.35);display:none}
-  .c13b0-chathead{padding:10px 12px;font-weight:800;display:flex;align-items:center;justify-content:space-between}
-  .c13b0-chatbody{height:calc(100% - 94px);overflow:auto;padding:10px 12px;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:13px}
-  .c13b0-chatline{white-space:pre-wrap;margin:8px 0}
-  .c13b0-chatbar{display:flex;gap:8px;padding:10px 12px;border-top:1px solid rgba(255,255,255,.10)}
-  .c13b0-chatin{flex:1;border-radius:12px;padding:10px 12px;border:1px solid rgba(255,255,255,.12);outline:none}
-  .c13b0-chatbtn{border-radius:12px;padding:10px 12px;font-weight:800;border:0;cursor:pointer}
-</style>
-
-        const method = methodSelect.value;
-        if (method === 'secure-commit') sendToSecureCommit(text);
-        if (method === 'github-server') sendToGitHubServer(text);
-        else if (method === 'server') sendToServer(text);
-        else if (method === 'fs') sendToFS(text);
-        else if (method === 'github') sendToGitHub(text);
-<div id="c13b0_chat_fab" class="c13b0-chatfab">🧱💬🧱 CHAT</div>
-
-<div id="c13b0_chat_panel" class="c13b0-chatpanel" role="dialog" aria-label="C13B0 Chat">
-  <div class="c13b0-chathead">
-    <div>🧱💬🧱 Repo Terminal</div>
-    <div style="display:flex;gap:8px;align-items:center">
-      <small id="c13b0_chat_repo" style="opacity:.8">repo: (auto)</small>
-      <button id="c13b0_chat_close" class="c13b0-chatbtn">✕</button>
-    </div>
-  </div>
-  <div id="c13b0_chat_body" class="c13b0-chatbody"></div>
-  <div class="c13b0-chatbar">
-    <input id="c13b0_chat_in" class="c13b0-chatin" placeholder="Ask this repo... (returns tokenized answer)" />
-    <button id="c13b0_chat_send" class="c13b0-chatbtn">SEND</button>
-  </div>
-</div>
-
-<script>
-(function(){
-  // Theme: tries to inherit page colors; keeps your design intact.
-  const fab = document.getElementById("c13b0_chat_fab");
-  const panel = document.getElementById("c13b0_chat_panel");
-  const body = document.getElementById("c13b0_chat_body");
-  const input = document.getElementById("c13b0_chat_in");
-  const send = document.getElementById("c13b0_chat_send");
-  const close = document.getElementById("c13b0_chat_close");
-  const repoLabel = document.getElementById("c13b0_chat_repo");
-
-  const repo = (location.pathname.split("/")[1] || "").trim(); // for org pages it’s the repo root on pages
-  repoLabel.textContent = "repo: " + (repo || "(root)");
-
-  // Minimal styling decisions; avoid fighting your CSS
-  fab.style.background = "rgba(0,0,0,.82)";
-  fab.style.color = "white";
-  panel.style.background = "rgba(0,0,0,.90)";
-  panel.style.color = "white";
-  document.querySelector(".c13b0-chathead").style.borderBottom = "1px solid rgba(255,255,255,.10)";
-  input.style.background = "rgba(255,255,255,.06)";
-  input.style.color = "white";
-  send.style.background = "rgba(255,255,255,.14)";
-  send.style.color = "white";
-  close.style.background = "rgba(255,255,255,.14)";
-  close.style.color = "white";
-
-  function line(txt){
-    const div=document.createElement("div");
-    div.className="c13b0-chatline";
-    div.textContent=txt;
-    body.appendChild(div);
-    body.scrollTop = body.scrollHeight;
-  }
-
-  function open(){ panel.style.display="block"; input.focus(); }
-  function shut(){ panel.style.display="none"; }
-
-  fab.addEventListener("click", open);
-  close.addEventListener("click", shut);
-  window.addEventListener("click",(e)=>{
-    if(panel.style.display==="block"){
-      // click outside closes
-      if(!panel.contains(e.target) && e.target!==fab) shut();
-    }
-  });
-
-  async function ask(){
-    const q=(input.value||"").trim();
-    if(!q) return;
-
-    line("> " + q);
-    input.value="";
-
-    // Router endpoint (you’ll create it in your router repo)
-    // expected response: { ok:true, repo:"x", answer:"...", token:{id:"...", value:"...", type:"..."} }
-    try{
-      const res = await fetch("/router/ask", {
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({ repo, query:q, t: Date.now() })
-      });
-      const data = await res.json();
-      if(!data || !data.ok){
-        line("⚠️ Router error: " + (data && data.error ? data.error : "unknown"));
-        return;
-      }
-      if(data.answer) line(data.answer);
-      if(data.token){
-        line("🧱🟡🧱 TOKEN → " + JSON.stringify(data.token));
-      } else {
-        line("🧱📍🧱 no token returned");
-      }
-    }catch(err){
-      line("⚠️ fetch failed: " + err);
-    }
-  }
-
-// focus UX
-window.addEventListener('load', () => { 
-    input.focus();
-    // Trigger initial method change to show correct inputs
-    methodSelect.dispatchEvent(new Event('change'));
-});
-terminal.addEventListener('click', () => { input.focus(); });
-  send.addEventListener("click", ask);
-  input.addEventListener("keydown",(e)=>{ if(e.key==="Enter") ask(); });
-})();
-</script>
-<!-- C13B0_CHAT_WIDGET_END -->
 </html>
 <!-- C14_TOKEN_PANEL_START -->
 <div style="font-family:monospace;background:#0b0f14;color:#e6edf3;padding:16px;margin:16px 0">
@@ -1002,33 +569,3 @@ terminal.addEventListener('click', () => { input.focus(); });
   </p>
 </div>
 <!-- C14_TOKEN_PANEL_END -->
-
-
-<!-- INDEX_VALUE_START -->
-<div class="box">
-<h2>🧱 Index License Token</h2>
-<p><strong>Operator:</strong> Kris Watson</p>
-<p><strong>License Value (monotonic):</strong> $112 USD</p>
-<p><small>Value increases daily via Infinity Plus + Mongoose growth.</small></p>
-<form action="https://www.paypal.com/paypalme/marvaseater@gmail.com/112" method="get" target="_blank">
-  <button type="submit">Buy License Token</button>
-</form>
-<p><small>Token grants right to display/use/operate this index for business. No ownership transfer.</small></p>
-<p><small>Contact: 808-342-9974</small></p>
-</div>
-<!-- INDEX_VALUE_END -->
-
-<!-- C13B0:MAP_VIEWER -->
-<section>
-  <h3>🧱🔗🧱 Infinity Ecosystem</h3>
-  <select onchange="location=this.value">
-    <!-- populated by bots -->
-  </select>
-</section>
-
-<!-- C13B0:PAYPAL_BLOCK -->
-<section>
-  <h3>🧱💰🧱 Acquire Access License</h3>
-  <p>Starting price shown below. Value increases with growth.</p>
-  <button>Buy Now (PayPal)</button>
-</section>
