@@ -614,5 +614,40 @@
 <script src="static/js/ui-wiring.js"></script>
 <script src="helper-octave-extension.js"></script>
 <!-- END MODULES -->
+
+<!-- PEWPI-SHARED UNIFIED LIBRARY -->
+<script src="https://unpkg.com/dexie@latest/dist/dexie.min.js"></script>
+<script src="src/pewpi-shared/token-service.js"></script>
+<script src="src/pewpi-shared/auth-service.js"></script>
+<script src="src/pewpi-shared/wallet-unified.js"></script>
+<script src="src/pewpi-shared/integration-listener.js"></script>
+<script src="src/pewpi-shared/components/UnifiedLoginModal.js"></script>
+<script src="src/pewpi-shared/components/WalletDisplay.js"></script>
+<script>
+// Defensive initialization - won't break if scripts fail to load
+(function() {
+  try {
+    if (typeof tokenService !== 'undefined' && typeof authService !== 'undefined') {
+      // Initialize auth service
+      authService.init().then(() => {
+        console.log('[pewpi-shared] Auth service initialized');
+      }).catch(err => {
+        console.warn('[pewpi-shared] Auth init failed (non-critical)', err);
+      });
+      
+      // Initialize token auto-tracking
+      if (tokenService.initAutoTracking) {
+        tokenService.initAutoTracking();
+        console.log('[pewpi-shared] Token auto-tracking enabled');
+      }
+    } else {
+      console.info('[pewpi-shared] Services not loaded, skipping initialization');
+    }
+  } catch (error) {
+    console.warn('[pewpi-shared] Initialization error (non-critical)', error);
+  }
+})();
+</script>
+<!-- END PEWPI-SHARED -->
 </body>
 </html>

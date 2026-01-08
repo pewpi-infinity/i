@@ -1,0 +1,19 @@
+{
+  "name": "i",
+  "version": "1.0.0",
+  "description": "Infinity Brain Node",
+  "dependencies": {
+    "dexie": "^3.2.4"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"No test specified\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pewpi-infinity/i.git"
+  },
+  "keywords": ["pewpi", "infinity", "brain"],
+  "author": "pewpi-infinity",
+  "license": "MIT"
+}
