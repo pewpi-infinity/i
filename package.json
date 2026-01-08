@@ -1,0 +1,28 @@
+{
+  "name": "pewpi-infinity-i",
+  "version": "1.0.0",
+  "description": "Infinity Brain - pewpi-infinity ecosystem with encryption, logging, and integration system",
+  "private": true,
+  "scripts": {
+    "postinstall": "echo '✓ Client dependencies installed. See src/pewpi-shared/ for the shared library.'"
+  },
+  "keywords": [
+    "pewpi",
+    "infinity",
+    "encryption",
+    "logging",
+    "token",
+    "wallet"
+  ],
+  "author": "pewpi-infinity",
+  "license": "MIT",
+  "dependencies": {
+    "dexie": "^3.2.4",
+    "crypto-js": "^4.2.0"
+  },
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pewpi-infinity/i.git"
+  }
+}

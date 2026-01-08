@@ -847,6 +847,69 @@ window.octave = { loadLogs, saveLogs, encryptText, decryptText, pushQueue, pushT
 <script src="static/js/ui-wiring.js"></script>
 <script src="helper-octave-extension.js"></script>
 <!-- END MODULES -->
+
+<!-- PEWPI-SHARED LIBRARY - Unified Auth + Wallet + Token Services -->
+<!-- Optional: Include Dexie and CryptoJS from CDN for enhanced functionality -->
+<script src="https://cdn.jsdelivr.net/npm/dexie@3.2.4/dist/dexie.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/crypto-js@4.2.0/crypto-js.min.js"></script>
+
+<!-- Core pewpi-shared services -->
+<script src="src/pewpi-shared/authService.js"></script>
+<script src="src/pewpi-shared/tokenService.js"></script>
+<script src="src/pewpi-shared/walletService.js"></script>
+<script src="src/pewpi-shared/machineAdapter.js"></script>
+<script src="src/pewpi-shared/integrationAdapter.js"></script>
+<script src="src/pewpi-shared/components.js"></script>
+<script src="src/pewpi-shared/index.js"></script>
+
+<!-- Defensive initialization snippet -->
+<script>
+  // TODO: Maintainer - Customize initialization options as needed
+  (function() {
+    'use strict';
+    
+    // Safe initialization wrapper - handles errors gracefully
+    async function initPewpiSharedSafely() {
+      try {
+        // Wait for DOM to be ready
+        if (document.readyState === 'loading') {
+          await new Promise(resolve => {
+            document.addEventListener('DOMContentLoaded', resolve);
+          });
+        }
+
+        // Initialize pewpi-shared services
+        const result = await pewpiShared.safeInit({
+          autoTrack: true,        // Enable token auto-tracking
+          restoreSession: true,   // Restore auth session on page load
+          initMachine: true,      // Enable cross-tab sync
+          initIntegration: true,  // Enable existing system integrations
+          debugMode: false        // Set to true for detailed logs
+        });
+
+        if (result.success) {
+          console.log('✓ PewPi-Shared initialized successfully');
+          
+          // Log authenticated user if available
+          if (authService && authService.isAuthenticated()) {
+            const user = authService.getCurrentUser();
+            console.log('✓ User session restored:', user);
+          }
+        } else {
+          console.warn('⚠ PewPi-Shared initialization had issues:', result.errors);
+        }
+      } catch (error) {
+        console.error('✗ PewPi-Shared initialization error:', error);
+        // Continue - app should still work without pewpi-shared
+      }
+    }
+
+    // Start initialization
+    initPewpiSharedSafely();
+  })();
+</script>
+<!-- END PEWPI-SHARED INTEGRATION -->
+
 </body>
 <!-- C13B0_CHAT_WIDGET_BEGIN -->
 <style>
