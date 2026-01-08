@@ -335,5 +335,63 @@
 
   <!-- Load terminal scripts as ES6 modules -->
   <script type="module" src="js/terminal.js"></script>
+
+  <!-- Pewpi Shared Library Dependencies -->
+  <script src="https://cdn.jsdelivr.net/npm/dexie@3.2.4/dist/dexie.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/crypto-js@4.2.0/crypto-js.js"></script>
+
+  <!-- Pewpi Shared Library Initialization -->
+  <script type="module">
+    // Initialize pewpi-shared library for cross-repo token/auth synchronization
+    // Wrapped in try/catch to avoid breaking existing functionality
+    try {
+      console.log('[Pewpi Shared] Initializing...');
+      
+      // Dynamic import since we're using ES modules
+      Promise.all([
+        import('./src/pewpi-shared/token-service.js'),
+        import('./src/pewpi-shared/integration-listener.js')
+      ]).then(([tokenModule, listenerModule]) => {
+        const { tokenService } = tokenModule;
+        const { IntegrationListener } = listenerModule;
+        
+        // Initialize token auto-tracking
+        if (tokenService && typeof tokenService.initAutoTracking === 'function') {
+          tokenService.initAutoTracking();
+          console.log('[Pewpi Shared] ✅ Token service initialized');
+        }
+        
+        // Set up integration listener for event synchronization
+        const listener = new IntegrationListener({
+          onTokenCreated: (token) => {
+            console.log('[Pewpi Shared] ✨ Token created:', token);
+            // Could integrate with terminal output if needed
+          },
+          onTokensCleared: () => {
+            console.log('[Pewpi Shared] 🗑️ Tokens cleared');
+          },
+          onLoginChanged: (data) => {
+            console.log('[Pewpi Shared] 👤 Login changed:', data.loggedIn ? data.user : 'logged out');
+          },
+          debug: true
+        });
+        
+        listener.start();
+        console.log('[Pewpi Shared] ✅ Integration listener started');
+        
+        // Make available globally for debugging
+        window.pewpiShared = {
+          tokenService,
+          integrationListener: listener
+        };
+        
+      }).catch(error => {
+        console.warn('[Pewpi Shared] Failed to initialize (non-critical):', error);
+      });
+      
+    } catch (error) {
+      console.warn('[Pewpi Shared] Initialization error (non-critical):', error);
+    }
+  </script>
 </body>
 </html>

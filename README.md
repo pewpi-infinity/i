@@ -4,6 +4,29 @@
 
 ---
 
+## 🔌 Pewpi Shared Library
+
+This repository now includes the canonical **pewpi-shared** library for unified authentication, wallet, and token management across the pewpi-infinity ecosystem.
+
+**Location:** `src/pewpi-shared/`
+
+**Key features:**
+- 🪙 **Token Service** - IndexedDB-backed token persistence with localStorage fallback
+- 🔐 **Auth Service** - Passwordless login with magic-link + GitHub OAuth  
+- 💼 **Wallet Component** - Token balance, list, and live feed UI
+- 📡 **Integration Listener** - Cross-repo event synchronization
+
+**Quick links:**
+- 📖 [Integration Guide](src/pewpi-shared/INTEGRATION.md) - Complete usage documentation
+- 🔧 [Token Service](src/pewpi-shared/token-service.js) - Token management API
+- 👤 [Login Component](src/pewpi-shared/auth/login-component.js) - Authentication
+- 💰 [Wallet Component](src/pewpi-shared/wallet/wallet-component.js) - Wallet UI
+
+**Getting started:**
+See `src/pewpi-shared/INTEGRATION.md` for dependencies and initialization instructions.
+
+---
+
 ## Features
 
 ### 1. Octave Logger & Pewpi Secret Encoder
