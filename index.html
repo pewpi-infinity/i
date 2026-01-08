@@ -847,6 +847,73 @@ window.octave = { loadLogs, saveLogs, encryptText, decryptText, pushQueue, pushT
 <script src="static/js/ui-wiring.js"></script>
 <script src="helper-octave-extension.js"></script>
 <!-- END MODULES -->
+
+<!-- Pewpi Shared Library Dependencies -->
+<script src="https://cdn.jsdelivr.net/npm/dexie@3.2.4/dist/dexie.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/crypto-js@4.2.0/crypto-js.js"></script>
+
+<!-- Pewpi Shared Library Initialization -->
+<script type="module">
+  // Initialize pewpi-shared library for cross-repo token/auth synchronization
+  // Wrapped in try/catch to avoid breaking existing functionality
+  try {
+    console.log('[Pewpi Shared] Initializing...');
+    
+    // Dynamic import since we're using ES modules
+    Promise.all([
+      import('./src/pewpi-shared/token-service.js'),
+      import('./src/pewpi-shared/integration-listener.js')
+    ]).then(([tokenModule, listenerModule]) => {
+      const { tokenService } = tokenModule;
+      const { IntegrationListener } = listenerModule;
+      
+      // Initialize token auto-tracking
+      if (tokenService && typeof tokenService.initAutoTracking === 'function') {
+        tokenService.initAutoTracking();
+        console.log('[Pewpi Shared] ✅ Token service initialized');
+      }
+      
+      // Set up integration listener for event synchronization
+      const listener = new IntegrationListener({
+        onTokenCreated: (token) => {
+          console.log('[Pewpi Shared] ✨ Token created:', token);
+          // Integrate with existing terminal if present
+          if (typeof printToTerminal === 'function') {
+            printToTerminal(`🪙 New ${token.type} token created (value: ${token.value})`);
+          }
+        },
+        onTokensCleared: () => {
+          console.log('[Pewpi Shared] 🗑️ Tokens cleared');
+          if (typeof printToTerminal === 'function') {
+            printToTerminal('🗑️ All tokens cleared');
+          }
+        },
+        onLoginChanged: (data) => {
+          console.log('[Pewpi Shared] 👤 Login changed:', data.loggedIn ? data.user : 'logged out');
+          if (data.loggedIn && typeof printToTerminal === 'function') {
+            printToTerminal(`👤 User logged in: ${data.user.email || data.user.userId}`);
+          }
+        },
+        debug: true
+      });
+      
+      listener.start();
+      console.log('[Pewpi Shared] ✅ Integration listener started');
+      
+      // Make available globally for debugging
+      window.pewpiShared = {
+        tokenService,
+        integrationListener: listener
+      };
+      
+    }).catch(error => {
+      console.warn('[Pewpi Shared] Failed to initialize (non-critical):', error);
+    });
+    
+  } catch (error) {
+    console.warn('[Pewpi Shared] Initialization error (non-critical):', error);
+  }
+</script>
 </body>
 <!-- C13B0_CHAT_WIDGET_BEGIN -->
 <style>
