@@ -180,24 +180,24 @@
     return {
       auth: {
         loaded: typeof authService !== 'undefined',
-        initialized: typeof authService !== 'undefined' && authService.isInitialized,
+        initialized: typeof authService !== 'undefined' && authService.isInitialized === true,
         authenticated: typeof authService !== 'undefined' && authService.isAuthenticated()
       },
       token: {
         loaded: typeof tokenService !== 'undefined',
-        initialized: typeof tokenService !== 'undefined' && tokenService.isInitialized
+        initialized: typeof tokenService !== 'undefined' && tokenService.isInitialized === true
       },
       wallet: {
         loaded: typeof walletService !== 'undefined',
-        initialized: typeof walletService !== 'undefined' && walletService.isInitialized
+        initialized: typeof walletService !== 'undefined' && walletService.isInitialized === true
       },
       machine: {
         loaded: typeof machineAdapter !== 'undefined',
-        initialized: typeof machineAdapter !== 'undefined' && machineAdapter.isInitialized
+        initialized: typeof machineAdapter !== 'undefined' && machineAdapter.isInitialized === true
       },
       integration: {
         loaded: typeof integrationAdapter !== 'undefined',
-        initialized: typeof integrationAdapter !== 'undefined' && integrationAdapter.isInitialized
+        initialized: typeof integrationAdapter !== 'undefined' && integrationAdapter.isInitialized === true
       },
       components: {
         loaded: typeof pewpiComponents !== 'undefined'

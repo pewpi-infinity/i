@@ -87,8 +87,17 @@ const authService = (() => {
       localStorage.setItem(STORAGE_KEYS.USER, cleanUsername);
       localStorage.setItem(STORAGE_KEYS.SESSION_START, sessionStartTime);
 
-      // Generate simple session token (TODO: Maintainer - use proper token generation in production)
-      const sessionToken = `${cleanUsername}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      // Generate session token using crypto API when available
+      // TODO: Maintainer - consider using a more robust token generation system in production
+      let randomPart;
+      if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+        const array = new Uint8Array(16);
+        crypto.getRandomValues(array);
+        randomPart = Array.from(array, byte => byte.toString(36)).join('');
+      } else {
+        randomPart = Math.random().toString(36).substr(2, 9);
+      }
+      const sessionToken = `${cleanUsername}_${Date.now()}_${randomPart}`;
       localStorage.setItem(STORAGE_KEYS.SESSION_TOKEN, sessionToken);
 
       console.log(`[AuthService] User logged in: ${cleanUsername}`);

@@ -59,11 +59,19 @@ const walletService = (() => {
    * @returns {Object} Validation result
    */
   function validateAddress(address) {
-    if (!address || typeof address !== 'string') {
+    if (!address) {
       return { valid: false, error: 'Address is required' };
+    }
+    
+    if (typeof address !== 'string') {
+      return { valid: false, error: 'Address must be a string' };
     }
 
     const trimmed = address.trim();
+    
+    if (!trimmed) {
+      return { valid: false, error: 'Address cannot be empty' };
+    }
     
     // Check for Ethereum-style addresses (0x + 40 hex chars)
     const ethPattern = /^0x[a-fA-F0-9]{40}$/;

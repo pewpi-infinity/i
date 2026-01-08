@@ -320,14 +320,15 @@ const components = (() => {
         await navigator.clipboard.writeText(text);
         return true;
       } else {
-        // Fallback for older browsers
+        // Fallback for older browsers (document.execCommand is deprecated)
+        // This is only used for legacy browser support
         const textarea = document.createElement('textarea');
         textarea.value = text;
         textarea.style.position = 'fixed';
         textarea.style.opacity = '0';
         document.body.appendChild(textarea);
         textarea.select();
-        const success = document.execCommand('copy');
+        const success = document.execCommand('copy'); // Deprecated but needed for old browsers
         document.body.removeChild(textarea);
         return success;
       }

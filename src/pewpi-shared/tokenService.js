@@ -172,6 +172,7 @@ const tokenService = (() => {
    * Initialize auto-tracking for token operations
    * This tracks user interactions and updates token balance automatically
    * TODO: Maintainer - Customize auto-tracking logic based on your use case
+   * TODO: Maintainer - Consider using event delegation on a specific container for better performance
    */
   function initAutoTracking() {
     if (autoTrackingEnabled) {
@@ -183,15 +184,17 @@ const tokenService = (() => {
     autoTrackingEnabled = true;
 
     // Example: Track button clicks for token grants
-    // TODO: Maintainer - Add your custom tracking logic here
+    // Using event delegation for better performance
+    // TODO: Maintainer - Specify a container element instead of document for better performance
     document.addEventListener('click', async (e) => {
-      if (e.target.dataset.tokenGrant) {
-        const amount = parseInt(e.target.dataset.tokenGrant, 10);
+      const target = e.target;
+      if (target.dataset.tokenGrant) {
+        const amount = parseInt(target.dataset.tokenGrant, 10);
         if (!isNaN(amount)) {
           await updateBalance(amount, 'Auto-tracked token grant');
         }
       }
-    });
+    }, { capture: false }); // Using bubbling phase for better compatibility
 
     // Track storage events for cross-tab synchronization
     window.addEventListener('storage', async (e) => {

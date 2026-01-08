@@ -40,7 +40,7 @@ const machineAdapter = (() => {
 
   /**
    * Generate or retrieve device ID
-   * Creates a unique identifier for this device/browser
+   * Creates a unique identifier for this device/browser using crypto API when available
    * @returns {string} Device ID
    */
   function getOrCreateDeviceId() {
@@ -48,8 +48,16 @@ const machineAdapter = (() => {
     let storedId = localStorage.getItem(storageKey);
 
     if (!storedId) {
-      // Create new device ID
-      storedId = `dev_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      // Create new device ID using crypto API for better randomness
+      let randomPart;
+      if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+        const array = new Uint8Array(12);
+        crypto.getRandomValues(array);
+        randomPart = Array.from(array, byte => byte.toString(36)).join('');
+      } else {
+        randomPart = Math.random().toString(36).substr(2, 9);
+      }
+      storedId = `dev_${Date.now()}_${randomPart}`;
       localStorage.setItem(storageKey, storedId);
       console.log('[MachineAdapter] Created new device ID:', storedId);
     }
