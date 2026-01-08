@@ -6,6 +6,31 @@
 
 ## Features
 
+### 0. Pewpi-Shared Unified Library
+
+**NEW**: The `src/pewpi-shared/` directory provides a unified authentication, wallet, and token management system synthesized from the best implementations across the pewpi-infinity organization.
+
+**Features:**
+- **Token Service**: IndexedDB-backed token storage with localStorage fallback
+- **Auth Service**: Magic-link authentication with session management
+- **Wallet Unified**: Token earning/spending with transaction history
+- **Integration Listener**: Cross-repo event listening and forwarding
+- **UI Components**: UnifiedLoginModal and WalletDisplay
+
+**Quick Start:**
+```javascript
+// Services are auto-initialized on page load
+await tokenService.createToken({ value: 'test', balance: 10 });
+await authService.login('user@example.com');
+await getWalletUnified().earnTokens(50, 'task_completion');
+```
+
+**Documentation:** See [src/pewpi-shared/docs/INTEGRATION.md](src/pewpi-shared/docs/INTEGRATION.md) for detailed integration guide and API reference.
+
+**Note:** This library is **additive and opt-in**. It doesn't replace existing auth/wallet code but can be used alongside it. To fully adopt pewpi-shared, gradually migrate existing code after testing.
+
+---
+
 ### 1. Octave Logger & Pewpi Secret Encoder
 - **Encrypted logging** with PBKDF2 + AES-GCM encryption
 - **AI conversation mode** with context distillation
